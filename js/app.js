@@ -92,7 +92,7 @@ var app = {
                 
                 //game.debug.geom(ff,'#fff');
                 
-                fireAction(self.options.playersOptions[0], self.options.playersOptions[3]);
+                fireAction(self.options.playersOptions[0], self.options.playersOptions[2]);
                 
                 
                 //console.log(ff);
@@ -102,16 +102,18 @@ var app = {
 
         function update() {
             //console.log(self.fireActionsCache);
-            self.fireActionsCache.forEach(function(actCacheItem){
+            self.fireActionsCache.forEach(function(actCacheItem, key){
                 
                var pos = actCacheItem.sprite.position;
                //var py = actCacheItem.sprite.body.velocity.y;
                //actCacheItem.sprite()
-               pos.setTo(pos.x + 1, pos.y + 1);
-                //console.log(actCacheItem.sprite);
+               pos.setTo(pos.x + actCacheItem.posVariable.x, pos.y + actCacheItem.posVariable.y);
+                console.log(parseInt(pos.x, 10));
                 //ffff
-                if(pos.x == 400){
-                    actCacheItem.sprite.kill();
+                if(parseInt(pos.x, 10) >= 500 
+                && parseInt(pos.x, 10) <= 700){
+                    actCacheItem.sprite.destroy();
+                    self.fireActionsCache.splice(key, 1);
                 }
               // actCacheItem.sprite.setTo(px + 1);
                //px.set(px) += 1;
@@ -144,13 +146,18 @@ var app = {
         //fireAction
         function fireAction(sourceObj, targetObj){
             
+            var sPos = sourceObj.position;
+            var tPos = targetObj.position;
+            
             var fireAct = {
-                sprite: game.add.sprite(sourceObj.position.x, sourceObj.position.y, 'ball'),
-                targetPosition: {x: targetObj.position.x, y: targetObj.position.y}     
+                sprite: game.add.sprite(sPos.x, sPos.y, 'ball'),
+                targetPosition: {x: tPos.x, y: tPos.y},
+                posVariable: {x: (tPos.x - sPos.x) / 120, 
+                              y: (tPos.y - sPos.y) / 120}   
             };
             
-            fireAct.sprite.anchor.setTo(0.5, 0.5);
-            fireAct.sprite.scale.setTo(2, 2);
+            //fireAct.sprite.anchor.setTo(0.5, 0.5);
+            //fireAct.sprite.scale.setTo(2, 2);
             
             //game.debug.geom(fireAct.sprite,'#fff');
             
