@@ -1,9 +1,22 @@
 var app = {
     
+    fireActionsCache: [],
+    
     options: {
-        url: '',
+        url: 'ws://ololo',
         testData: '{"" : ""}',
         players: ['player1','player2','player3','player4','player5','player6', 'player7', 'player8'],        
+        disablePlayers: [],        
+        playersOptions: [
+            {name: 'player1', position: {x: 200, y: 75 }},            
+            {name: 'player2', position: {x: 600, y: 75 }},            
+            {name: 'player3', position: {x: 700, y: 225 }},            
+            {name: 'player4', position: {x: 700, y: 375 }},            
+            {name: 'player5', position: {x: 600, y: 525 }},            
+            {name: 'player6', position: {x: 200, y: 525 }},            
+            {name: 'player7', position: {x: 100, y: 375 }},            
+            {name: 'player8', position: {x: 100, y: 225 }},            
+        ]
     },
     
     init: function(){
@@ -32,83 +45,138 @@ var app = {
 
         function create() {
 
-            game.physics.startSystem(Phaser.Physics.ARCADE);
+            var fragmentSrc = [
 
-            //game.add.tileSprite(0, 0, game.width, game.height, 'space');
+                "precision mediump float;",
 
-            emitter = game.add.emitter(game.world.centerX, game.world.centerY, 400);
+                "uniform float     time;",
+                "uniform vec2      resolution;",
 
-            emitter.makeParticles( [ 'fire1', 'fire2', 'fire3', 'smoke' ] );
+                "#define PI 0.01",
 
-            emitter.gravity = 200;
-            emitter.setAlpha(1, 0, 3000);
-            emitter.setScale(0.8, 0, 0.8, 0, 3000);
+                "void main( void ) {",
 
-            emitter.start(false, 3000, 5);
+                    "vec2 p = ( gl_FragCoord.xy / resolution.xy ) - 0.5;",
 
-            sprite = game.add.sprite(0, 300, 'ball', 0);
+                    "float sx = 0.2*sin( 25.0 * p.y - time * 5.);",
 
-            game.physics.arcade.enable(sprite);
+                    "float dy = 0.9/ ( 50. * abs(p.y - sx));",
 
-            game.physics.arcade.gravity.y = 150;
-            game.physics.arcade.checkCollision.left = false;
-            game.physics.arcade.checkCollision.right = false;
+                    "gl_FragColor = vec4( (p.x + 0.5) * dy, 0.5 * dy, dy-1.65, 5.0 );",
 
-            sprite.body.setSize(80, 80, 0, 0);
-            sprite.body.collideWorldBounds = true;
-            sprite.body.bounce.set(1);
-            sprite.body.velocity.set(300, 200);
+                "}"
+            ];
 
-            sprite.inputEnabled = true;
+            filter = new Phaser.Filter(game, null, fragmentSrc);
+            filter.setResolution(800, 600);
 
-            sprite.input.enableDrag();
-            sprite.events.onDragStart.add(onDragStart, this);
-            sprite.events.onDragStop.add(onDragStop, this);
+            sprite = game.add.sprite();
+            sprite.width = 800;
+            sprite.height = 600;
 
-            sprite.animations.add('pulse');
-            sprite.play('pulse', 30, true);
-
-            sprite.anchor.set(0.5);
+            sprite.filters = [ filter ];
             
             //create players
-            for(var pl = 0; pl < self.options.players.length; pl++){
-                
-                var player = new Phaser.Rectangle(0, 0, 50, 50);
+            self.options.playersOptions.forEach(function(playerItem){
+                                
+                var player = new Phaser.Circle(playerItem.position.x, playerItem.position.y, 50);
                 game.debug.geom(player,'#0fffff');
-                createText(16 + (pl * 100), 16, self.options.players[pl]);
+                createText(playerItem.position.x - 30, playerItem.position.y - 55, playerItem.name);
+                //createText(16 + (pl * 100), 16, self.options.players[pl]);
                 
-            }
+            });
             ////////////////
-
+            
+            
+            //fireAction
+            setTimeout(function(){
+                
+                var ff = new Phaser.Circle(20, 20, 20);
+                
+                game.debug.geom(ff,'#fff');
+                
+                //fireAction(self.options.playersOptions[0], self.options.playersOptions[3]);
+                
+                
+                console.log(self.fireActionsCache);
+                
+            }, 3000);    
         }
 
         function update() {
+            //console.log(self.fireActionsCache);
+            self.fireActionsCache.forEach(function(actCacheItem){
+                
+               var px = actCacheItem.sprite.x;
+               var py = actCacheItem.sprite.y;
 
-            var px = sprite.body.velocity.x;
-            var py = sprite.body.velocity.y;
+               //actCacheItem.sprite.setTo(px + 1);
+               px *= -1;
+               py *= -1;
+               //game.world.wrap(actCacheItem.sprite, 64);
+                
+            });
+            
+            filter.update(game.input.activePointer);
 
-            px *= -1;
-            py *= -1;
+            //var px = sprite.body.velocity.x;
+            //var py = sprite.body.velocity.y;
 
-            emitter.minParticleSpeed.set(px, py);
-            emitter.maxParticleSpeed.set(px, py);
+            //px *= -1;
+            //py *= -1;
 
-            emitter.emitX = sprite.x;
-            emitter.emitY = sprite.y;
+            //emitter.minParticleSpeed.set(px, py);
+            //emitter.maxParticleSpeed.set(px, py);
+
+            //emitter.emitX = sprite.x;
+            //emitter.emitY = sprite.y;
 
             // emitter.forEachExists(game.world.wrap, game.world);
-            game.world.wrap(sprite, 64);
+            //game.world.wrap(sprite, 64);
 
         }
-
-        function onDragStart() {
-            sprite.body.moves = false;
+        
+        //fireAction
+        function fireAction(sourceObj, targetObj){
+            
+            var fireAct = {
+                sprite: new Phaser.Circle(20, 20, 20),
+                targetPosition: {x: 0, y: 20}     
+            };
+            
+            game.debug.geom(fireAct.sprite,'#fff');
+            
+            self.fireActionsCache.push(fireAct);
+                                        
         }
+        ////////////
+        
+        function connectToSocket(){
+            
+            var socket = new WebSocket(self.options.url);
+            
+            socket.onopen = function() {
+                console.log("Соединение установлено.");
+            };
 
-        function onDragStop() {
-            sprite.body.moves = true;
+            socket.onclose = function(event) {
+            if (event.wasClean) {
+                console.log('Соединение закрыто');
+            } else {
+                console.log('Обрыв соединения');
+            }
+                console.log('Код: ' + event.code + ' причина: ' + event.reason);
+            };
+
+            socket.onmessage = function(event) {
+                console.log("Получены данные " + event.data);
+            };
+
+            socket.onerror = function(error) {
+                console.log("Ошибка " + error.message);
+            };
         }
-
+        
         function createText(x, y, string) {
 
             var text = game.add.text(x, y, string);
@@ -120,7 +188,7 @@ var app = {
             text.fontSize = 20;
             // text.fontWeight = 'bold';
             text.fill = '#ffffff';
-            text.setShadow(2, 2, 'rgba(0, 0, 0, 0.7)', 2);
+            //text.setShadow(2, 2, 'rgba(0, 0, 0, 0.7)', 2);
 
             return text;
 
@@ -151,6 +219,14 @@ var app = {
       }   
         
     },
+    
+    socketConnection: function(){
+        
+        var self = this;
+        
+        
+        
+    }
     
 }
 
