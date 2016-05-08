@@ -8,14 +8,14 @@ var app = {
         players: ['player1','player2','player3','player4','player5','player6', 'player7', 'player8'],        
         disablePlayers: [],        
         playersOptions: [
-            {name: 'player1', position: {x: 200, y: 75 }},            
-            {name: 'player2', position: {x: 600, y: 75 }},            
-            {name: 'player3', position: {x: 700, y: 225 }},            
-            {name: 'player4', position: {x: 700, y: 375 }},            
-            {name: 'player5', position: {x: 600, y: 525 }},            
-            {name: 'player6', position: {x: 200, y: 525 }},            
-            {name: 'player7', position: {x: 100, y: 375 }},            
-            {name: 'player8', position: {x: 100, y: 225 }},            
+            {name: 'PLAYER1', position: {x: 200, y: 75 }},            
+            {name: 'PLAYER2', position: {x: 600, y: 75 }},            
+            {name: 'PLAYER3', position: {x: 700, y: 225 }},            
+            {name: 'PLAYER4', position: {x: 700, y: 375 }},            
+            {name: 'PLAYER5', position: {x: 600, y: 525 }},            
+            {name: 'PLAYER6', position: {x: 200, y: 525 }},            
+            {name: 'PLAYER7', position: {x: 100, y: 375 }},            
+            {name: 'PLAYER8', position: {x: 100, y: 225 }},            
         ]
     },
     
@@ -28,12 +28,6 @@ var app = {
 
         function preload() {
 
-            game.load.image('space', 'assets/misc/starfield.jpg');
-            game.load.image('fire1', 'assets/particles/fire1.png');
-            game.load.image('fire2', 'assets/particles/fire2.png');
-            game.load.image('fire3', 'assets/particles/fire3.png');
-            game.load.image('smoke', 'assets/particles/smoke-puff.png');
-
             game.load.spritesheet('ball', 'assets/particles/plasmaball.png', 128, 128);
 
         }
@@ -42,6 +36,7 @@ var app = {
         var emitter;
         var path;
         var index;
+        var ff;
 
         function create() {
 
@@ -79,9 +74,11 @@ var app = {
             //create players
             self.options.playersOptions.forEach(function(playerItem){
                                 
-                var player = new Phaser.Circle(playerItem.position.x, playerItem.position.y, 50);
-                game.debug.geom(player,'#0fffff');
-                createText(playerItem.position.x - 30, playerItem.position.y - 55, playerItem.name);
+                var player = game.add.sprite(playerItem.position.x, playerItem.position.y, 'ball');
+                //var playerSprite = game.add.sprite(0,100,player);
+                //console.log(playerSprite);
+                //game.debug.geom(player,'#0fffff');
+                createText(playerItem.position.x - 40, playerItem.position.y - 55, playerItem.name);
                 //createText(16 + (pl * 100), 16, self.options.players[pl]);
                 
             });
@@ -91,14 +88,14 @@ var app = {
             //fireAction
             setTimeout(function(){
                 
-                var ff = new Phaser.Circle(20, 20, 20);
+                //ff = game.add.sprite(300, 300, 'ball');
                 
-                game.debug.geom(ff,'#fff');
+                //game.debug.geom(ff,'#fff');
                 
-                //fireAction(self.options.playersOptions[0], self.options.playersOptions[3]);
+                fireAction(self.options.playersOptions[0], self.options.playersOptions[3]);
                 
                 
-                console.log(self.fireActionsCache);
+                //console.log(ff);
                 
             }, 3000);    
         }
@@ -107,15 +104,23 @@ var app = {
             //console.log(self.fireActionsCache);
             self.fireActionsCache.forEach(function(actCacheItem){
                 
-               var px = actCacheItem.sprite.x;
-               var py = actCacheItem.sprite.y;
-
-               //actCacheItem.sprite.setTo(px + 1);
-               px *= -1;
-               py *= -1;
+               var pos = actCacheItem.sprite.position;
+               //var py = actCacheItem.sprite.body.velocity.y;
+               //actCacheItem.sprite()
+               pos.setTo(pos.x + 1, pos.y + 1);
+                //console.log(actCacheItem.sprite);
+                //ffff
+                if(pos.x == 400){
+                    actCacheItem.sprite.kill();
+                }
+              // actCacheItem.sprite.setTo(px + 1);
+               //px.set(px) += 1;
+               //py *= -10;
                //game.world.wrap(actCacheItem.sprite, 64);
                 
             });
+            
+            //ff.scale.x *= ff.scale.x;
             
             filter.update(game.input.activePointer);
 
@@ -140,11 +145,14 @@ var app = {
         function fireAction(sourceObj, targetObj){
             
             var fireAct = {
-                sprite: new Phaser.Circle(20, 20, 20),
-                targetPosition: {x: 0, y: 20}     
+                sprite: game.add.sprite(sourceObj.position.x, sourceObj.position.y, 'ball'),
+                targetPosition: {x: targetObj.position.x, y: targetObj.position.y}     
             };
             
-            game.debug.geom(fireAct.sprite,'#fff');
+            fireAct.sprite.anchor.setTo(0.5, 0.5);
+            fireAct.sprite.scale.setTo(2, 2);
+            
+            //game.debug.geom(fireAct.sprite,'#fff');
             
             self.fireActionsCache.push(fireAct);
                                         
