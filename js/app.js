@@ -6,21 +6,30 @@ var app = {
         url: 'ws://ololo',
         testData: '{"" : ""}',
         players: ['player1','player2','player3','player4','player5','player6', 'player7', 'player8', 'player9'],        
-        disablePlayers: [],        
-        playersOptions: [
-            {name: 'PLAYER1', position: {x: 200, y: 75 }, labelPosition: {x: 0, y: 0} },            
-            {name: 'PLAYER2', position: {x: 700, y: 75 }, labelPosition: {x: 0, y: 0}},            
-            {name: 'PLAYER3', position: {x: 800, y: 225 }, labelPosition: {x: 0, y: 0}},            
-            {name: 'PLAYER4', position: {x: 800, y: 375 }, labelPosition: {x: 0, y: 0}},            
-            {name: 'PLAYER5', position: {x: 700, y: 525 }, labelPosition: {x: 0, y: 0}},            
-            {name: 'PLAYER6', position: {x: 200, y: 525 }, labelPosition: {x: 0, y: 0}},            
-            {name: 'PLAYER7', position: {x: 100, y: 375 }, labelPosition: {x: 0, y: 0}},            
-            {name: 'PLAYER8', position: {x: 100, y: 225 }, labelPosition: {x: 0, y: 0}},            
-            {name: 'PLAYER9', position: {x: 450, y: 525}, labelPosition: {x: 0, y: 0}}
+ //disablePlayers: [],        
+        teams: [
+            {teamId: 1, name: 'PLAYER1', position: {x: 200, y: 75 }, labelPosition: {x: 0, y: 0}, color: '' },            
+            {teamId: 2, name: 'PLAYER2', position: {x: 700, y: 75 }, labelPosition: {x: 0, y: 0}, color: ''},            
+            {teamId: 3, name: 'PLAYER3', position: {x: 800, y: 225 }, labelPosition: {x: 0, y: 0}, color: ''},            
+            {teamId: 4, name: 'PLAYER4', position: {x: 800, y: 375 }, labelPosition: {x: 0, y: 0}, color: ''},            
+            {teamId: 5, name: 'PLAYER5', position: {x: 700, y: 525 }, labelPosition: {x: 0, y: 0}, color: ''},            
+            {teamId: 6, name: 'PLAYER6', position: {x: 200, y: 525 }, labelPosition: {x: 0, y: 0}, color: ''},            
+            {teamId: 7, name: 'PLAYER7', position: {x: 100, y: 375 }, labelPosition: {x: 0, y: 0}, color: ''},            
+            {teamId: 8, name: 'PLAYER8', position: {x: 100, y: 225 }, labelPosition: {x: 0, y: 0}, color: ''},            
+            {teamId: 9, name: 'PLAYER9', position: {x: 450, y: 525}, labelPosition: {x: 0, y: 0}, color: ''}
         ],
+        services: [
+            {serviceId: 0, seviceName: 'Service1', color: 'red'},
+            {serviceId: 1, seviceName: 'Service1', color: 'blue'},
+            {serviceId: 2, seviceName: 'Service1', color: 'green'},
+            {serviceId: 3, seviceName: 'Service1', color: 'silver'},
+            {serviceId: 4, seviceName: 'Service1', color: 'yellow'},
+            ],
         width: 1000,
         height: 700
     },
+    
+    //initServices: function(){}
 
     init: function(){
         
@@ -32,14 +41,14 @@ var app = {
         function preload() {
 
             game.load.spritesheet('ball', 'assets/particles/plasmaball.png', 128, 128);
-
         }
 
         var sprite;
         var emitter;
         var path;
         var index;
-        var ff;
+        var filter;
+        var filterL;
 
         function create() {
 
@@ -64,6 +73,9 @@ var app = {
 
                 "}"
             ];
+            
+            //add physics
+            game.physics.startSystem(Phaser.Physics.ARCADE);
 
             filter = new Phaser.Filter(game, null, fragmentSrc);
             filter.setResolution(self.options.width, self.options.height);
@@ -75,83 +87,94 @@ var app = {
             sprite.filters = [ filter ];
             
             //create players
-            self.options.playersOptions.forEach(function(playerItem){
+            self.options.teams.forEach(function(teamItem){
                                 
-                var player = game.add.sprite(playerItem.position.x, playerItem.position.y, 'ball');
-                //var playerSprite = game.add.sprite(0,100,player);
-                //console.log(playerSprite);
-                //game.debug.geom(player,'#0fffff');
-                createText(playerItem.position.x + playerItem.labelPosition.x, playerItem.position.y - playerItem.labelPosition.y, playerItem.name);
-                //createText(16 + (pl * 100), 16, self.options.players[pl]);
+                var player = game.add.sprite(teamItem.position.x, teamItem.position.y, 'ball');
+                
+                initServices(teamItem);
+                
+                //filterL = game.add.filter('LightBeam', 800, 600);
+                //player.filters = [filterL];
+                
+                createText(teamItem.position.x + teamItem.labelPosition.x, teamItem.position.y - teamItem.labelPosition.y, teamItem.name);
+                
                 
             });
             ////////////////
             
             
-            //fireAction
+            //onAction DEMO - TEST
             setTimeout(function(){
+                                
+                onAtack(self.options.teams[0], self.options.teams[2], 0);
                 
-                //ff = game.add.sprite(300, 300, 'ball');
+                setTimeout(function(){
+                    
+                    onServiceStateChange({teamId: 2, serviceId: 3, state: 'down'});        
+                    
+                }, 6000);
                 
-                //game.debug.geom(ff,'#fff');
+            }, 3000);
+            /////////////////////
+               
+        }
+        
+        function initServices(teamItem){
+            
+            teamItem.services = [];
+            
+            var topPaddVar = 0;
+            
+            //console.log(game);            
+            app.options.services.forEach(function(service){
+                   
+                var serviceObj = {
+                    serviceId: service.serviceId, 
+                    sprite: new Phaser.Rectangle(teamItem.position.x + 130, teamItem.position.y + topPaddVar, 15, 15),                   
+                    state: 'enabled'
+                };
                 
-                fireAction(self.options.playersOptions[0], self.options.playersOptions[2]);
+                topPaddVar += 20;
                 
+                teamItem.services.push(serviceObj);
                 
-                //console.log(ff);
+                game.debug.geom(serviceObj.sprite, service.color);
+                //game.debug.renderRectangle(serviceObj.sprite,'#0fffff');
+                //console.log(serviceObj.sprite);
+                                  
                 
-            }, 3000);    
+            });           
+            
         }
 
         function update() {
-            //console.log(self.fireActionsCache);
+            
             self.fireActionsCache.forEach(function(actCacheItem, key){
                 
                var pos = actCacheItem.sprite.position;
-               //var py = actCacheItem.sprite.body.velocity.y;
-               //actCacheItem.sprite()
+               
+               
                pos.setTo(pos.x + actCacheItem.posVariable.x, pos.y + actCacheItem.posVariable.y);
-                console.log(parseInt(pos.x, 10));
-                //ffff
-                // if(parseInt(pos.x, 10) >= 500 
-                // && parseInt(pos.x, 10) <= 700){
+                
                 if (parseInt(pos.x, 10) >= actCacheItem.targetPosition.x) {
                     actCacheItem.sprite.destroy();
                     self.fireActionsCache.splice(key, 1);
                 }
-              // actCacheItem.sprite.setTo(px + 1);
-               //px.set(px) += 1;
-               //py *= -10;
-               //game.world.wrap(actCacheItem.sprite, 64);
+                
                 
             });
             
-            //ff.scale.x *= ff.scale.x;
-            
             filter.update(game.input.activePointer);
-
-            //var px = sprite.body.velocity.x;
-            //var py = sprite.body.velocity.y;
-
-            //px *= -1;
-            //py *= -1;
-
-            //emitter.minParticleSpeed.set(px, py);
-            //emitter.maxParticleSpeed.set(px, py);
-
-            //emitter.emitX = sprite.x;
-            //emitter.emitY = sprite.y;
-
-            // emitter.forEachExists(game.world.wrap, game.world);
-            //game.world.wrap(sprite, 64);
-
+            
         }
         
-        //fireAction
-        function fireAction(sourceObj, targetObj){
+        //onAtack
+        function onAtack(sourceObj, targetObj, serviceId){
             
+            //console.log(targetObj.services[serviceId].sprite);
+            //fix fixed service id
             var sPos = sourceObj.position;
-            var tPos = targetObj.position;
+            var tPos = targetObj.services[serviceId].sprite;
             
             var fireAct = {
                 sprite: game.add.sprite(sPos.x, sPos.y, 'ball'),
@@ -159,41 +182,39 @@ var app = {
                 posVariable: {x: (tPos.x - sPos.x) / 120, 
                               y: (tPos.y - sPos.y) / 120}   
             };
-            
-            //fireAct.sprite.anchor.setTo(0.5, 0.5);
-            //fireAct.sprite.scale.setTo(2, 2);
-            
-            //game.debug.geom(fireAct.sprite,'#fff');
-            
+                        
             self.fireActionsCache.push(fireAct);
                                         
         }
         ////////////
         
+        // Смена статуса сервиса
+        function onServiceStateChange(stateObj){
+            if(stateObj){
+                
+                self.options.teams.forEach(function(team){
+                   
+                    if(team.teamId == stateObj.teamId){
+                        
+                        if(stateObj.state == 'down'){
+                        console.log(team.services[stateObj.serviceId].sprite);
+                            //team.services[stateObj.serviceId].sprite.destroy();
+                            game.debug.geom(team.services[stateObj.serviceId].sprite, '#000');
+                            team.services.splice(stateObj.serviceId, 1);
+                            
+                        }
+                        
+                    }    
+                    
+                });
+                
+            }        
+        }
+        ///////////////
+        
+        // Здесь работа с серваком, вызов статуса и 
         function connectToSocket(){
-            
-            var socket = new WebSocket(self.options.url);
-            
-            socket.onopen = function() {
-                console.log("Соединение установлено.");
-            };
-
-            socket.onclose = function(event) {
-            if (event.wasClean) {
-                console.log('Соединение закрыто');
-            } else {
-                console.log('Обрыв соединения');
-            }
-                console.log('Код: ' + event.code + ' причина: ' + event.reason);
-            };
-
-            socket.onmessage = function(event) {
-                console.log("Получены данные " + event.data);
-            };
-
-            socket.onerror = function(error) {
-                console.log("Ошибка " + error.message);
-            };
+                        
         }
         
         function createText(x, y, string) {
@@ -242,8 +263,6 @@ var app = {
     socketConnection: function(){
         
         var self = this;
-        
-        
         
     }
     
