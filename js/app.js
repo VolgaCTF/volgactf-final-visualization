@@ -140,39 +140,53 @@ var app = {
             });
             ////////////////
             //onAction DEMO - TEST
-            setTimeout(function() {
-                onAttack(1, 4, 1);
-                // setTimeout(function(){
-                //     onServiceStateChange({teamId: 2, serviceId: 3, state: 'down'});
-                // }, 6000);
-            }, 3000);
 
-            setTimeout(function() {
-                onAttack(3, 4, 2);
-            }, 3500);
+            var eventSource = new window.EventSource('/stream/')
+            eventSource.addEventListener('log', function (e) {
+                let data = JSON.parse(e.data)
+                if (data.type === 3) {
+                    console.log(data)
+                    onServiceStateChange(data.params.team_id, data.params.service_id, data.params.state)
+                } else if (data.type === 4) {
+                    console.log(data)
+                    onAttack(data.params.attack_team_id, data.params.victim_team_id, data.params.service_id)
+                }
+            })
 
-            setTimeout(function() {
-                onAttack(3, 6, 3);
-            }, 4000);
-            /////////////////////
 
-            setTimeout(function() {
-                onAttack(4, 7, 4);
-            }, 4500);
+            // setTimeout(function() {
+            //     onAttack(1, 4, 1);
+            //     // setTimeout(function(){
+            //     //     onServiceStateChange({teamId: 2, serviceId: 3, state: 'down'});
+            //     // }, 6000);
+            // }, 3000);
 
-            setTimeout(function() {
-                onServiceStateChange(1, 1, 'up');
-                onServiceStateChange(1, 2, 'up');
-                onServiceStateChange(1, 3, 'up');
-                onServiceStateChange(1, 4, 'up');
-            }, 2000)
+            // setTimeout(function() {
+            //     onAttack(3, 4, 2);
+            // }, 3500);
 
-            setTimeout(function() {
-                onServiceStateChange(5, 1, 'up');
-                onServiceStateChange(5, 2, 'up');
-                onServiceStateChange(5, 3, 'up');
-                onServiceStateChange(5, 4, 'up');
-            }, 4000)
+            // setTimeout(function() {
+            //     onAttack(3, 6, 3);
+            // }, 4000);
+            // /////////////////////
+
+            // setTimeout(function() {
+            //     onAttack(4, 7, 4);
+            // }, 4500);
+
+            // setTimeout(function() {
+            //     onServiceStateChange(1, 1, 'up');
+            //     onServiceStateChange(1, 2, 'up');
+            //     onServiceStateChange(1, 3, 'up');
+            //     onServiceStateChange(1, 4, 'up');
+            // }, 2000)
+
+            // setTimeout(function() {
+            //     onServiceStateChange(5, 1, 'up');
+            //     onServiceStateChange(5, 2, 'up');
+            //     onServiceStateChange(5, 3, 'up');
+            //     onServiceStateChange(5, 4, 'up');
+            // }, 4000)
         }
 
         function initServices(team) {
