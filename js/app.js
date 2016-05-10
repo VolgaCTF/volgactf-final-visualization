@@ -5,26 +5,29 @@ var app = {
     options: {
         url: 'ws://ololo',
         testData: '{"" : ""}',
-        players: ['player1','player2','player3','player4','player5','player6', 'player7', 'player8'],        
+        players: ['player1','player2','player3','player4','player5','player6', 'player7', 'player8', 'player9'],        
         disablePlayers: [],        
         playersOptions: [
-            {name: 'PLAYER1', position: {x: 200, y: 75 }},            
-            {name: 'PLAYER2', position: {x: 600, y: 75 }},            
-            {name: 'PLAYER3', position: {x: 700, y: 225 }},            
-            {name: 'PLAYER4', position: {x: 700, y: 375 }},            
-            {name: 'PLAYER5', position: {x: 600, y: 525 }},            
-            {name: 'PLAYER6', position: {x: 200, y: 525 }},            
-            {name: 'PLAYER7', position: {x: 100, y: 375 }},            
-            {name: 'PLAYER8', position: {x: 100, y: 225 }},            
-        ]
+            {name: 'PLAYER1', position: {x: 200, y: 75 }, labelPosition: {x: 0, y: 0} },            
+            {name: 'PLAYER2', position: {x: 700, y: 75 }, labelPosition: {x: 0, y: 0}},            
+            {name: 'PLAYER3', position: {x: 800, y: 225 }, labelPosition: {x: 0, y: 0}},            
+            {name: 'PLAYER4', position: {x: 800, y: 375 }, labelPosition: {x: 0, y: 0}},            
+            {name: 'PLAYER5', position: {x: 700, y: 525 }, labelPosition: {x: 0, y: 0}},            
+            {name: 'PLAYER6', position: {x: 200, y: 525 }, labelPosition: {x: 0, y: 0}},            
+            {name: 'PLAYER7', position: {x: 100, y: 375 }, labelPosition: {x: 0, y: 0}},            
+            {name: 'PLAYER8', position: {x: 100, y: 225 }, labelPosition: {x: 0, y: 0}},            
+            {name: 'PLAYER9', position: {x: 450, y: 525}, labelPosition: {x: 0, y: 0}}
+        ],
+        width: 1000,
+        height: 700
     },
-    
+
     init: function(){
         
         var self = this,
             data = self.options.testData;
             
-        var game = new Phaser.Game(800, 600, Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update, render: render });
+        var game = new Phaser.Game(self.options.width, self.options.height, Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update, render: render });
 
         function preload() {
 
@@ -63,11 +66,11 @@ var app = {
             ];
 
             filter = new Phaser.Filter(game, null, fragmentSrc);
-            filter.setResolution(800, 600);
+            filter.setResolution(self.options.width, self.options.height);
 
             sprite = game.add.sprite();
-            sprite.width = 800;
-            sprite.height = 600;
+            sprite.width = self.options.width;
+            sprite.height = self.options.height;
 
             sprite.filters = [ filter ];
             
@@ -78,7 +81,7 @@ var app = {
                 //var playerSprite = game.add.sprite(0,100,player);
                 //console.log(playerSprite);
                 //game.debug.geom(player,'#0fffff');
-                createText(playerItem.position.x - 40, playerItem.position.y - 55, playerItem.name);
+                createText(playerItem.position.x + playerItem.labelPosition.x, playerItem.position.y - playerItem.labelPosition.y, playerItem.name);
                 //createText(16 + (pl * 100), 16, self.options.players[pl]);
                 
             });
@@ -110,8 +113,9 @@ var app = {
                pos.setTo(pos.x + actCacheItem.posVariable.x, pos.y + actCacheItem.posVariable.y);
                 console.log(parseInt(pos.x, 10));
                 //ffff
-                if(parseInt(pos.x, 10) >= 500 
-                && parseInt(pos.x, 10) <= 700){
+                // if(parseInt(pos.x, 10) >= 500 
+                // && parseInt(pos.x, 10) <= 700){
+                if (parseInt(pos.x, 10) >= actCacheItem.targetPosition.x) {
                     actCacheItem.sprite.destroy();
                     self.fireActionsCache.splice(key, 1);
                 }
