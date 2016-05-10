@@ -22,22 +22,22 @@ function getServices () {
     return [
         {
             serviceId: 1,
-            serviceState: 'down',
+            serviceState: 2,
             sprite: null
         },
         {
             serviceId: 2,
-            serviceState: 'down',
+            serviceState: 2,
             sprite: null
         },
         {
             serviceId: 3,
-            serviceState: 'down',
+            serviceState: 2,
             sprite: null
         },
         {
             serviceId: 4,
-            serviceState: 'down',
+            serviceState: 2,
             sprite: null
         }
     ]
@@ -58,10 +58,10 @@ var app = {
             {teamId: 9, services: getServices(), name: 'SiBears', position: calculatePosition(screenWidth, screenHeight, xGapStart, xGapEnd, yGapStart, yGapEnd, 8, 9), labelPosition: {x: 20, y: 10} }
         ],
         services: [
-            {serviceId: 1, serviceName: 'digidocs', upColor: '#f00', downColor: '#600' },
-            {serviceId: 2, serviceName: 'mobile-profile', upColor: '#ff0', downColor: '#660' },
-            {serviceId: 3, serviceName: 'sociality', upColor: '#00f', downColor: '#006' },
-            {serviceId: 4, serviceName: 'weather', upColor: '#0f0', downColor: '#060' }
+            {serviceId: 1, serviceName: 'digidocs', upColor: '#f00', downColor: '#400' },
+            {serviceId: 2, serviceName: 'mobile-profile', upColor: '#ff0', downColor: '#440' },
+            {serviceId: 3, serviceName: 'sociality', upColor: '#00f', downColor: '#004' },
+            {serviceId: 4, serviceName: 'weather', upColor: '#0f0', downColor: '#040' }
         ],
         width: screenWidth,
         height: screenHeight
@@ -141,16 +141,30 @@ var app = {
             ////////////////
             //onAction DEMO - TEST
 
-            var eventSource = new window.EventSource('/stream/')
-            eventSource.addEventListener('log', function (e) {
-                let data = JSON.parse(e.data)
-                if (data.type === 3) {
-                    console.log(data)
-                    onServiceStateChange(data.params.team_id, data.params.service_id, data.params.state)
-                } else if (data.type === 4) {
-                    console.log(data)
-                    onAttack(data.params.attack_team_id, data.params.victim_team_id, data.params.service_id)
+            fetch('/api/team/services')
+            .then((response) => {
+                if (response.status >= 200 && response.status < 300) {
+                    return response.json()
+                } else {
+                    let err = new Error(response.statusText)
+                    err.response = response
+                    throw err
                 }
+            })
+            .then((data) => {
+                data.forEach((params) => {
+                    onServiceStateChange(params.team_id, params.service_id, params.state)
+                })
+
+                var eventSource = new window.EventSource('/stream/')
+                eventSource.addEventListener('log', function (e) {
+                    let data = JSON.parse(e.data)
+                    if (data.type === 3) {
+                        onServiceStateChange(data.params.team_id, data.params.service_id, data.params.state)
+                    } else if (data.type === 4) {
+                        onAttack(data.params.attack_team_id, data.params.victim_team_id, data.params.service_id)
+                    }
+                })
             })
 
 
@@ -198,7 +212,7 @@ var app = {
                 if (!record.sprite) {
                     record.sprite = new Phaser.Rectangle(team.position.x + 130, team.position.y + 25 + (record.serviceId - 1) * 20, 15, 15);
                 }
-                game.debug.geom(record.sprite, (record.serviceState === 'up') ? service.upColor : service.downColor);
+                game.debug.geom(record.sprite, (record.serviceState === 1) ? service.upColor : service.downColor);
                 //game.debug.renderRectangle(serviceObj.sprite,'#0fffff');
                 //console.log(serviceObj.sprite);
 
