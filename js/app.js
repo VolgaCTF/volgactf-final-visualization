@@ -69,7 +69,7 @@ function getQuadrant (teamNumber, numberOfTeams) {
         return 'topRight';
     } else if (angle >= Math.PI / 2 && angle < Math.PI) {
         return 'topLeft';
-    } else if (angle > Math.PI && angle < (3 * Math.PI / 2)) {
+    } else if (angle >= Math.PI && angle < (3 * Math.PI / 2)) {
         return 'bottomLeft';
     } else if (angle >= (3 * Math.PI / 2) && angle < (2 * Math.PI)) {
         return 'bottomRight';
