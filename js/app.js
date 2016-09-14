@@ -122,7 +122,7 @@ var app = {
 
                     "vec2 p = ( gl_FragCoord.xy / resolution.xy ) - 0.5;",
 
-                    "float sx = 0.2*sin( 25.0 * p.y - time * 5.);",
+                    "float sx = 0.2*sin( 25.0 * p.y - time * 2.);",
 
                     "float dy = 0.9/ ( 50. * abs(p.y - sx));",
 
