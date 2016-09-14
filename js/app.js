@@ -15,6 +15,18 @@ var fireballSpriteHeight = 128;
 var fontSize = 18;
 var labelYGap = 5;
 
+function getServiceSpriteName(serviceId) {
+    switch (serviceId) {
+        case 1: return 'red';
+        case 2: return 'yellow';
+        case 3: return 'blue';
+        case 4: return 'green';
+        case 5: return 'white';
+        case 6: return 'white';
+        default: return 'white';
+    }
+}
+
 function getUpColor(serviceId) {
     switch (serviceId) {
         case 1: return '#f00';
@@ -22,6 +34,7 @@ function getUpColor(serviceId) {
         case 3: return '#00f';
         case 4: return '#0f0';
         case 5: return '#fff';
+        case 6: return '#fff';
         default: return '#fff';
     }
 }
@@ -33,6 +46,7 @@ function getDownColor(serviceId) {
         case 3: return '#004';
         case 4: return '#040';
         case 5: return '#444';
+        case 6: return '#444';
         default: return '#444';
     }
 }
@@ -304,16 +318,7 @@ var app = {
                 y: targetObj.position.y - fireballSpriteHeight / 2
             };
 
-            var spriteName = 'bubble';
-            switch (serviceId) {
-                case 1: spriteName = 'red'; break;
-                case 2: spriteName = 'yellow'; break;
-                case 3: spriteName = 'blue'; break;
-                case 4: spriteName = 'green'; break;
-                case 5: spriteName = 'white'; break;
-                default: break
-            }
-
+            var spriteName = getServiceSpriteName(serviceId);
             var fireAct = {
                 sprite: game.add.sprite(sourcePos.x, sourcePos.y, spriteName),
                 targetPosition: {
