@@ -173,7 +173,7 @@ var app = {
                 if (response.status >= 200 && response.status < 300) {
                     return response.json();
                 } else {
-                    let err = new Error(response.statusText);
+                    var err = new Error(response.statusText);
                     err.response = response;
                     throw err;
                 }
@@ -185,7 +185,7 @@ var app = {
 
                 var eventSource = new window.EventSource('/stream/');
                 eventSource.addEventListener('log', function (e) {
-                    let data = JSON.parse(e.data);
+                    var data = JSON.parse(e.data);
                     if (data.type === 3) {
                         onServiceStateChange(data.params.team_id, data.params.service_id, data.params.state);
                     } else if (data.type === 4) {
@@ -376,7 +376,7 @@ window.onload = function() {
         if (response.status >= 200 && response.status < 300) {
             return response.json();
         } else {
-            let err = new Error(response.statusText);
+            var err = new Error(response.statusText);
             err.response = response;
             throw err;
         }
@@ -394,7 +394,7 @@ window.onload = function() {
             if (response.status >= 200 && response.status < 300) {
                 return response.json();
             } else {
-                let err = new Error(response.statusText);
+                var err = new Error(response.statusText);
                 err.response = response;
                 throw err;
             }
