@@ -52,15 +52,15 @@ function getDownColor(serviceId) {
 }
 
 function calculatePosition (teamNumber, numberOfTeams) {
-    var t = 2 * Math.PI * teamNumber / numberOfTeams
-    var a = (screenWidth - xGapStart - xGapEnd) / 2
-    var b = (screenHeight - yGapStart - yGapEnd) / 2
-    var x = a * Math.cos(t)
-    var y = b * Math.sin(t)
+    var t = 2 * Math.PI * teamNumber / numberOfTeams;
+    var a = (screenWidth - xGapStart - xGapEnd) / 2;
+    var b = (screenHeight - yGapStart - yGapEnd) / 2;
+    var x = a * Math.cos(t);
+    var y = b * Math.sin(t);
     return {
         x: x + xGapStart + a,
         y: y + yGapStart + b
-    }
+    };
 }
 
 function getQuadrant (teamNumber, numberOfTeams) {
@@ -86,7 +86,7 @@ var app = {
     },
 
     init: function() {
-        var self = this;
+        var self = app;
         var game = new Phaser.Game(self.options.width, self.options.height, Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update, render: render });
 
         function preload() {
@@ -169,30 +169,30 @@ var app = {
             });
 
             fetch('/api/team/services')
-            .then((response) => {
+            .then(function(response) {
                 if (response.status >= 200 && response.status < 300) {
-                    return response.json()
+                    return response.json();
                 } else {
-                    let err = new Error(response.statusText)
-                    err.response = response
-                    throw err
+                    let err = new Error(response.statusText);
+                    err.response = response;
+                    throw err;
                 }
             })
-            .then((data) => {
-                data.forEach((params) => {
-                    onServiceStateChange(params.team_id, params.service_id, params.state)
-                })
+            .then(function(data) {
+                data.forEach(function(params) {
+                    onServiceStateChange(params.team_id, params.service_id, params.state);
+                });
 
-                var eventSource = new window.EventSource('/stream/')
+                var eventSource = new window.EventSource('/stream/');
                 eventSource.addEventListener('log', function (e) {
-                    let data = JSON.parse(e.data)
+                    let data = JSON.parse(e.data);
                     if (data.type === 3) {
-                        onServiceStateChange(data.params.team_id, data.params.service_id, data.params.state)
+                        onServiceStateChange(data.params.team_id, data.params.service_id, data.params.state);
                     } else if (data.type === 4) {
-                        onAttack(data.params.attack_team_id, data.params.victim_team_id, data.params.service_id)
+                        onAttack(data.params.attack_team_id, data.params.victim_team_id, data.params.service_id);
                     }
                 })
-            })
+            });
 
             // Test
             // setTimeout(function() {
@@ -288,8 +288,8 @@ var app = {
 
                 pos.setTo(pos.x + actCacheItem.posVariable.x, pos.y + actCacheItem.posVariable.y);
 
-                var x = parseInt(pos.x, 10)
-                var y = parseInt(pos.y, 10)
+                var x = parseInt(pos.x, 10);
+                var y = parseInt(pos.y, 10);
 
                 if (Math.abs(x - actCacheItem.targetPosition.x) < 10 && Math.abs(y - actCacheItem.targetPosition.y) < 10) {
                     actCacheItem.sprite.destroy();
@@ -342,12 +342,12 @@ var app = {
                 return rec.serviceId === serviceId;
             });
 
-            record.serviceState = serviceState
+            record.serviceState = serviceState;
 
             self.options.teams.forEach(function(team, ndx, arr) {
                 var quadrant = getQuadrant(ndx, arr.length);
                 initServices(team, quadrant);
-            })
+            });
         }
 
         function createText(x, y, textStr) {
@@ -374,11 +374,11 @@ window.onload = function() {
     fetch('/api/services')
     .then(function(response) {
         if (response.status >= 200 && response.status < 300) {
-            return response.json()
+            return response.json();
         } else {
-            let err = new Error(response.statusText)
-            err.response = response
-            throw err
+            let err = new Error(response.statusText);
+            err.response = response;
+            throw err;
         }
     })
     .then(function(servicesData) {
@@ -386,17 +386,17 @@ window.onload = function() {
             return {
                 serviceId: serviceData.id,
                 serviceName: serviceData.name
-            }
+            };
         });
 
         fetch('/api/teams')
         .then(function(response) {
             if (response.status >= 200 && response.status < 300) {
-                return response.json()
+                return response.json();
             } else {
-                let err = new Error(response.statusText)
-                err.response = response
-                throw err
+                let err = new Error(response.statusText);
+                err.response = response;
+                throw err;
             }
         })
         .then(function(teamsData) {
@@ -411,7 +411,7 @@ window.onload = function() {
                         };
                     }),
                     name: teamData.name
-                }
+                };
             });
 
             app.options.services = servicesOptions;
@@ -419,5 +419,4 @@ window.onload = function() {
             app.init();
         });
     });
-
 }
