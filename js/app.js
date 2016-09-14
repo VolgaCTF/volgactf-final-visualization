@@ -260,7 +260,7 @@ var app = {
         function drawLegend(game) {
             var gapHeight = 10;
             var gapWidth = 10;
-            var itemHeight = 22;
+            var itemHeight = 20;
             var itemWidth = itemHeight;
             var itemPositionX = screenWidth / 2 - 75;
             var itemPositionYStart = screenHeight / 2 - 75;
