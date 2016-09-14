@@ -21,8 +21,8 @@ function getServiceSpriteName(serviceId) {
         case 2: return 'yellow';
         case 3: return 'blue';
         case 4: return 'green';
-        case 5: return 'white';
-        case 6: return 'white';
+        case 5: return 'purple';
+        case 6: return 'cyan';
         default: return 'white';
     }
 }
@@ -33,8 +33,8 @@ function getUpColor(serviceId) {
         case 2: return '#ff0';
         case 3: return '#00f';
         case 4: return '#0f0';
-        case 5: return '#fff';
-        case 6: return '#fff';
+        case 5: return '#f0f';
+        case 6: return '#0ff';
         default: return '#fff';
     }
 }
@@ -45,8 +45,8 @@ function getDownColor(serviceId) {
         case 2: return '#440';
         case 3: return '#004';
         case 4: return '#040';
-        case 5: return '#444';
-        case 6: return '#444';
+        case 5: return '#404';
+        case 6: return '#044';
         default: return '#444';
     }
 }
@@ -96,6 +96,8 @@ var app = {
             game.load.spritesheet('blue', 'assets/particles/blue.png', fireballSpriteWidth, fireballSpriteHeight);
             game.load.spritesheet('green', 'assets/particles/green.png', fireballSpriteWidth, fireballSpriteHeight);
             game.load.spritesheet('white', 'assets/particles/white.png', fireballSpriteWidth, fireballSpriteHeight);
+            game.load.spritesheet('cyan', 'assets/particles/cyan.png', fireballSpriteWidth, fireballSpriteHeight);
+            game.load.spritesheet('purple', 'assets/particles/purple.png', fireballSpriteWidth, fireballSpriteHeight);
         }
 
         var sprite;
