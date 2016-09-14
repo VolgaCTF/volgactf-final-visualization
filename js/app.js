@@ -80,6 +80,7 @@ function getQuadrant (teamNumber, numberOfTeams) {
 
 var app = {
     fireActionsCache: [],
+    legendSprites: [],
     options: {
         width: screenWidth,
         height: screenHeight
@@ -170,6 +171,8 @@ var app = {
                 createText(teamLabelX, teamLabelY, team.name);
             });
 
+            drawLegend(game);
+
             fetch('/api/team/services')
             .then(function(response) {
                 if (response.status >= 200 && response.status < 300) {
@@ -252,6 +255,29 @@ var app = {
             //     onServiceStateChange(5, 4, 'up');
             // }, 4000)
             // end test
+        }
+
+        function drawLegend(game) {
+            var gapHeight = 10;
+            var gapWidth = 10;
+            var itemHeight = 22;
+            var itemWidth = itemHeight;
+            var itemPositionX = screenWidth / 2 - 75;
+            var itemPositionYStart = screenHeight / 2 - 75;
+
+            self.options.services.forEach(function(service, ndx) {
+                var itemPositionY = itemPositionYStart + ndx * (itemHeight + gapHeight);
+                var sprite = new Phaser.Rectangle(itemPositionX, itemPositionY, itemWidth, itemHeight);
+                self.legendSprites.push(sprite);
+                var sprite2 = new Phaser.Rectangle(itemPositionX + gapWidth + itemWidth, itemPositionY, itemWidth, itemHeight);
+                self.legendSprites.push(sprite2);
+                game.debug.geom(sprite, getUpColor(service.serviceId));
+                game.debug.geom(sprite2, getDownColor(service.serviceId));
+                var text = game.add.text(itemPositionX + gapWidth * 2 + itemWidth * 2, itemPositionY, service.serviceName);
+                text.font = 'Arial Black';
+                text.fontSize = 14;
+                text.fill = '#ffffff';
+            });
         }
 
         function initServices(team, quadrant) {
