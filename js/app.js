@@ -80,7 +80,7 @@ function getQuadrant (teamNumber, numberOfTeams) {
 
 var app = {
     fireActionsCache: [],
-    legendSprites: [],
+    legendElements: [],
     options: {
         width: screenWidth,
         height: screenHeight
@@ -171,7 +171,7 @@ var app = {
                 createText(teamLabelX, teamLabelY, team.name);
             });
 
-            drawLegend(game);
+            initLegend();
 
             fetch('/api/team/services')
             .then(function(response) {
@@ -257,7 +257,7 @@ var app = {
             // end test
         }
 
-        function drawLegend(game) {
+        function initLegend() {
             var gapHeight = 10;
             var gapWidth = 10;
             var itemHeight = 20;
@@ -268,11 +268,15 @@ var app = {
             self.options.services.forEach(function(service, ndx) {
                 var itemPositionY = itemPositionYStart + ndx * (itemHeight + gapHeight);
                 var sprite = new Phaser.Rectangle(itemPositionX, itemPositionY, itemWidth, itemHeight);
-                self.legendSprites.push(sprite);
                 var sprite2 = new Phaser.Rectangle(itemPositionX + gapWidth + itemWidth, itemPositionY, itemWidth, itemHeight);
-                self.legendSprites.push(sprite2);
-                game.debug.geom(sprite, getUpColor(service.serviceId));
-                game.debug.geom(sprite2, getDownColor(service.serviceId));
+                self.legendElements.push({
+                    sprite: sprite,
+                    color: getUpColor(service.serviceId)
+                });
+                self.legendElements.push({
+                    sprite: sprite2,
+                    color: getDownColor(service.serviceId)
+                })
                 var text = game.add.text(itemPositionX + gapWidth * 2 + itemWidth * 2, itemPositionY, service.serviceName);
                 text.font = 'Arial Black';
                 text.fontSize = 14;
@@ -394,6 +398,10 @@ var app = {
         }
 
         function render() {
+            for (var i = 0; i < app.legendElements.length; ++i) {
+                game.debug.geom(app.legendElements[i].sprite, app.legendElements[i].color);
+            }
+
         }
     }
 }
