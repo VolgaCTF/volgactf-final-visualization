@@ -81,6 +81,7 @@ function getQuadrant (teamNumber, numberOfTeams) {
 var app = {
     fireActionsCache: [],
     legendElements: [],
+    teamServiceElements: [],
     options: {
         width: screenWidth,
         height: screenHeight
@@ -144,8 +145,6 @@ var app = {
 
             sprite.filters = [ filter ];
 
-            // var logo = game.add.sprite(screenWidth / 2 - 256, screenHeight / 2 - 256, 'volgactf');
-
             self.options.teams.forEach(function(team, ndx, arr) {
                 team.position = calculatePosition(ndx, arr.length);
                 var quadrant = getQuadrant(ndx, arr.length);
@@ -198,63 +197,6 @@ var app = {
                     }
                 })
             });
-
-            // Test
-            // setTimeout(function() {
-            //     onAttack(1, 4, 1);
-            // }, 3000);
-
-            // setTimeout(function() {
-            //     onAttack(3, 4, 2);
-            // }, 3500);
-
-            // setTimeout(function() {
-            //     onAttack(3, 6, 3);
-            // }, 4000);
-
-            // setTimeout(function() {
-            //     onAttack(4, 7, 4);
-            // }, 4500);
-
-            // setTimeout(function() {
-            //     onAttack(3, 8, 5);
-            // }, 5500);
-
-            // setTimeout(function() {
-            //     onAttack(5, 12, 4);
-            // }, 6000);
-
-            // setTimeout(function() {
-            //     onAttack(7, 14, 5);
-            // }, 6500);
-
-            // setTimeout(function() {
-            //     onAttack(8, 1, 1);
-            // }, 7000);
-
-            // setTimeout(function() {
-            //     onAttack(10, 2, 3);
-            // }, 7500);
-
-            // setTimeout(function() {
-            //     onAttack(13, 6, 4);
-            // }, 8000);
-
-
-            // setTimeout(function() {
-            //     onServiceStateChange(1, 1, 'up');
-            //     onServiceStateChange(1, 2, 'up');
-            //     onServiceStateChange(1, 3, 'up');
-            //     onServiceStateChange(1, 4, 'up');
-            // }, 2000)
-
-            // setTimeout(function() {
-            //     onServiceStateChange(5, 1, 'up');
-            //     onServiceStateChange(5, 2, 'up');
-            //     onServiceStateChange(5, 3, 'up');
-            //     onServiceStateChange(5, 4, 'up');
-            // }, 4000)
-            // end test
         }
 
         function initLegend() {
@@ -271,13 +213,13 @@ var app = {
                 var sprite2 = new Phaser.Rectangle(itemPositionX + gapWidth + itemWidth, itemPositionY, itemWidth, itemHeight);
                 self.legendElements.push({
                     sprite: sprite,
-                    color: getUpColor(service.serviceId)
+                    color: getUpColor(service.id)
                 });
                 self.legendElements.push({
                     sprite: sprite2,
-                    color: getDownColor(service.serviceId)
+                    color: getDownColor(service.id)
                 })
-                var text = game.add.text(itemPositionX + gapWidth * 2 + itemWidth * 2, itemPositionY, service.serviceName);
+                var text = game.add.text(itemPositionX + gapWidth * 2 + itemWidth * 2, itemPositionY, service.name);
                 text.font = 'Arial Black';
                 text.fontSize = 14;
                 text.fill = '#ffffff';
@@ -287,15 +229,12 @@ var app = {
         function initServices(team, quadrant) {
             var totalHeight = teamSpriteHeight + labelYGap * 2;
             var gapHeight = 5;
-            var totalGapHeight = gapHeight * (team.services.length - 1);
-            var itemHeight = (totalHeight - totalGapHeight) / team.services.length;
+            var totalGapHeight = gapHeight * (self.options.services.length - 1);
+            var itemHeight = (totalHeight - totalGapHeight) / self.options.services.length;
             var itemWidth = itemHeight;
             var marginX = 10;
 
-            team.services.forEach(function(record, ndx) {
-                var service = self.options.services.find(function(service) {
-                    return service.serviceId === record.serviceId;
-                });
+            self.options.services.forEach(function(service, ndx) {
                 var itemPositionX;
                 switch (quadrant) {
                     case 'topLeft':
@@ -309,8 +248,12 @@ var app = {
                         break;
                 }
                 var itemPositionY = team.position.y - teamSpriteHeight / 2 - labelYGap + ndx * (itemHeight + gapHeight);
-                record.sprite = new Phaser.Rectangle(itemPositionX, itemPositionY, itemWidth, itemHeight);
-                game.debug.geom(record.sprite, (record.serviceState === 1) ? getUpColor(service.serviceId) : getDownColor(service.serviceId));
+                self.teamServiceElements.push({
+                    teamId: team.id,
+                    serviceId: service.id,
+                    sprite: new Phaser.Rectangle(itemPositionX, itemPositionY, itemWidth, itemHeight),
+                    color: getDownColor(service.id)
+                })
             });
         }
 
@@ -334,11 +277,11 @@ var app = {
 
         function onAttack (attackerId, victimId, serviceId) {
             var sourceObj = self.options.teams.find(function (team) {
-                return team.teamId === attackerId;
+                return team.id === attackerId;
             });
 
             var targetObj = self.options.teams.find(function(team) {
-                return team.teamId === victimId;
+                return team.id === victimId;
             });
 
             var sourcePos = {
@@ -366,20 +309,11 @@ var app = {
         }
 
         function onServiceStateChange(teamId, serviceId, serviceState){
-            var team = self.options.teams.find(function(team) {
-                return team.teamId === teamId;
-            });
-
-            var record = team.services.find(function(rec) {
-                return rec.serviceId === serviceId;
-            });
-
-            record.serviceState = serviceState;
-
-            self.options.teams.forEach(function(team, ndx, arr) {
-                var quadrant = getQuadrant(ndx, arr.length);
-                initServices(team, quadrant);
-            });
+            for (var i = 0; i < self.teamServiceElements.length; ++i) {
+                if (self.teamServiceElements[i].teamId === teamId && self.teamServiceElements[i].serviceId === serviceId) {
+                    self.teamServiceElements[i].color = (serviceState === 1) ? getUpColor(serviceId) : getDownColor(serviceId)
+                }
+            }
         }
 
         function createText(x, y, textStr) {
@@ -401,7 +335,9 @@ var app = {
             for (var i = 0; i < app.legendElements.length; ++i) {
                 game.debug.geom(app.legendElements[i].sprite, app.legendElements[i].color);
             }
-
+            for (var i = 0; i < app.teamServiceElements.length; ++i) {
+                game.debug.geom(app.teamServiceElements[i].sprite, app.teamServiceElements[i].color);
+            }
         }
     }
 }
@@ -420,8 +356,8 @@ window.onload = function() {
     .then(function(servicesData) {
         var servicesOptions = servicesData.map(function(serviceData) {
             return {
-                serviceId: serviceData.id,
-                serviceName: serviceData.name
+                id: serviceData.id,
+                name: serviceData.name
             };
         });
 
@@ -438,14 +374,7 @@ window.onload = function() {
         .then(function(teamsData) {
             var teamsOptions = teamsData.map(function(teamData) {
                 return {
-                    teamId: teamData.id,
-                    services: servicesData.map(function(serviceData) {
-                        return {
-                            serviceId: serviceData.id,
-                            serviceState: 2,
-                            sprite: null
-                        };
-                    }),
+                    id: teamData.id,
                     name: teamData.name
                 };
             });
