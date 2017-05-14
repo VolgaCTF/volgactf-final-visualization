@@ -172,7 +172,7 @@ var app = {
 
             initLegend();
 
-            fetch('/api/team/services')
+            fetch('/api/team/service/push-states')
             .then(function(response) {
                 if (response.status >= 200 && response.status < 300) {
                     return response.json();
@@ -190,7 +190,7 @@ var app = {
                 var eventSource = new window.EventSource('/stream/');
                 eventSource.addEventListener('log', function (e) {
                     var data = JSON.parse(e.data);
-                    if (data.type === 3) {
+                    if (data.type === 31 || data.type === 32) {
                         onServiceStateChange(data.params.team_id, data.params.service_id, data.params.state);
                     } else if (data.type === 4) {
                         onAttack(data.params.attack_team_id, data.params.victim_team_id, data.params.service_id);
