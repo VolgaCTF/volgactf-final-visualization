@@ -1,19 +1,28 @@
 var screenWidth = document.documentElement.clientWidth;
 var screenHeight = document.documentElement.clientHeight;
 
-var xGapStart = 75;
-var xGapEnd = 75;
-var yGapStart = 75;
-var yGapEnd = 75;
-
 var teamSpriteWidth = 64;
 var teamSpriteHeight = 64;
 
+var teamStateGap = 5;
+var stateStateGap = 2;
+var stateLabelGap = 5;
+
+var stateItemGap = 2;
+var stateItemWidth = 10;
+var stateItemHeight = 10;
+
+var stateHeight = stateItemHeight * 2 + stateStateGap;
+
+var fontSize = 14;
+
+var xGapStart = teamSpriteWidth / 2 + 5;
+var xGapEnd = teamSpriteWidth / 2 + 5;
+var yGapStart = teamSpriteWidth / 2 + teamStateGap + stateHeight + stateLabelGap + fontSize + 10;
+var yGapEnd = teamSpriteWidth / 2 + teamStateGap + stateHeight + stateLabelGap + fontSize + 10;
+
 var fireballSpriteWidth = 128;
 var fireballSpriteHeight = 128;
-
-var fontSize = 18;
-var labelYGap = 5;
 
 function getServiceSpriteName(serviceId) {
     switch (serviceId) {
@@ -66,13 +75,13 @@ function calculatePosition (teamNumber, numberOfTeams) {
 function getQuadrant (teamNumber, numberOfTeams) {
     var angle = 2 * Math.PI * teamNumber / numberOfTeams;
     if (angle >= 0.0 && angle < (Math.PI / 2)) {
-        return 'topRight';
-    } else if (angle >= Math.PI / 2 && angle < Math.PI) {
-        return 'topLeft';
-    } else if (angle >= Math.PI && angle < (3 * Math.PI / 2)) {
-        return 'bottomLeft';
-    } else if (angle >= (3 * Math.PI / 2) && angle < (2 * Math.PI)) {
         return 'bottomRight';
+    } else if (angle >= Math.PI / 2 && angle < Math.PI) {
+        return 'bottomLeft';
+    } else if (angle >= Math.PI && angle < (3 * Math.PI / 2)) {
+        return 'topLeft';
+    } else if (angle >= (3 * Math.PI / 2) && angle < (2 * Math.PI)) {
+        return 'topRight';
     } else {
         return 'unknown';
     }
@@ -81,7 +90,8 @@ function getQuadrant (teamNumber, numberOfTeams) {
 var app = {
     fireActionsCache: [],
     legendElements: [],
-    teamServiceElements: [],
+    teamServicePushStateElements: [],
+    teamServicePullStateElements: [],
     options: {
         width: screenWidth,
         height: screenHeight
@@ -110,30 +120,19 @@ var app = {
         var filterL;
 
         function create() {
-
             var fragmentSrc = [
-
                 "precision mediump float;",
-
                 "uniform float     time;",
                 "uniform vec2      resolution;",
-
                 "#define PI 0.01",
-
                 "void main( void ) {",
-
                     "vec2 p = ( gl_FragCoord.xy / resolution.xy ) - 0.5;",
-
                     "float sx = 0.2*sin( 25.0 * p.y - time * 2.);",
-
                     "float dy = 0.9/ ( 50. * abs(p.y - sx));",
-
                     "gl_FragColor = vec4( (p.x + 0.5) * dy, 0.5 * dy, dy-1.65, 5.0 );",
-
                 "}"
             ];
 
-            //add physics
             game.physics.startSystem(Phaser.Physics.ARCADE);
 
             filter = new Phaser.Filter(game, null, fragmentSrc);
@@ -148,26 +147,37 @@ var app = {
             self.options.teams.forEach(function(team, ndx, arr) {
                 team.position = calculatePosition(ndx, arr.length);
                 var quadrant = getQuadrant(ndx, arr.length);
-
                 var player = game.add.sprite(team.position.x - teamSpriteWidth / 2, team.position.y - teamSpriteHeight / 2, 'bubble');
 
                 initServices(team, quadrant);
 
-                var teamLabelX = team.position.x - teamSpriteWidth / 2;
-                var teamLabelY;
+                var text = createText(0, 0, team.name);
+
+                var teamLabelX = team.position.x;
+                var teamLabelY = team.position.y;
                 switch (quadrant) {
                     case 'bottomLeft':
+                        teamLabelX = team.position.x - teamSpriteWidth / 2;
+                        teamLabelY = team.position.y + teamSpriteHeight / 2 + teamStateGap + stateHeight + stateLabelGap;
+                        break;
                     case 'bottomRight':
-                        teamLabelY = team.position.y - teamSpriteHeight / 2 - fontSize - labelYGap - 5;
+                        teamLabelX = team.position.x + teamSpriteWidth / 2 - text.width;
+                        teamLabelY = team.position.y + teamSpriteHeight / 2 + teamStateGap + stateHeight + stateLabelGap;
                         break;
                     case 'topLeft':
+                        teamLabelX = team.position.x - teamSpriteWidth / 2;
+                        teamLabelY = team.position.y - teamSpriteHeight / 2 - teamStateGap - stateHeight - stateLabelGap - text.height;
+                        break;
                     case 'topRight':
+                        teamLabelX = team.position.x + teamSpriteWidth / 2 - text.width;
+                        teamLabelY = team.position.y - teamSpriteHeight / 2 - teamStateGap - stateHeight - stateLabelGap - text.height;
+                        break;
                     default:
-                        teamLabelY = team.position.y + teamSpriteHeight / 2 + labelYGap + 5;
                         break;
                 }
 
-                createText(teamLabelX, teamLabelY, team.name);
+                text.x = teamLabelX;
+                text.y = teamLabelY;
             });
 
             initLegend();
@@ -184,19 +194,37 @@ var app = {
             })
             .then(function(data) {
                 data.forEach(function(params) {
-                    onServiceStateChange(params.team_id, params.service_id, params.state);
+                    onTeamServicePushStateChange(params.team_id, params.service_id, params.state);
                 });
-
-                var eventSource = new window.EventSource('/stream/');
-                eventSource.addEventListener('log', function (e) {
-                    var data = JSON.parse(e.data);
-                    if (data.type === 31 || data.type === 32) {
-                        onServiceStateChange(data.params.team_id, data.params.service_id, data.params.state);
-                    } else if (data.type === 4) {
-                        onAttack(data.params.attack_team_id, data.params.victim_team_id, data.params.service_id);
-                    }
-                })
             });
+
+            fetch('/api/team/service/pull-states')
+            .then(function(response) {
+                if (response.status >= 200 && response.status < 300) {
+                    return response.json();
+                } else {
+                    var err = new Error(response.statusText);
+                    err.response = response;
+                    throw err;
+                }
+            })
+            .then(function(data) {
+                data.forEach(function(params) {
+                    onTeamServicePullStateChange(params.team_id, params.service_id, params.state);
+                });
+            });
+
+            var eventSource = new window.EventSource('/stream/');
+            eventSource.addEventListener('log', function (e) {
+                var data = JSON.parse(e.data);
+                if (data.type === 31) {
+                    onTeamServicePushStateChange(data.params.team_id, data.params.service_id, data.params.state);
+                } else if (data.type === 32) {
+                    onTeamServicePullStateChange(data.params.team_id, data.params.service_id, data.params.state);
+                } else if (data.type === 4) {
+                    onAttack(data.params.actor_team_id, data.params.target_team_id, data.params.target_service_id);
+                }
+            })
         }
 
         function initLegend() {
@@ -227,33 +255,50 @@ var app = {
         }
 
         function initServices(team, quadrant) {
-            var totalHeight = teamSpriteHeight + labelYGap * 2;
-            var gapHeight = 5;
-            var totalGapHeight = gapHeight * (self.options.services.length - 1);
-            var itemHeight = (totalHeight - totalGapHeight) / self.options.services.length;
-            var itemWidth = itemHeight;
-            var marginX = 10;
+            var totalServices = self.options.services.length
+
+            var stateTotalWidth = totalServices * stateItemWidth + (totalServices - 1) * stateItemGap
+
+            var startX = team.position.x
+            var startY = team.position.y
+
+            switch (quadrant) {
+                case 'topLeft':
+                    startX = team.position.x - teamSpriteWidth / 2
+                    startY = team.position.y - teamSpriteHeight / 2 - teamStateGap - stateHeight
+                    break
+                case 'bottomLeft':
+                    startX = team.position.x - teamSpriteWidth / 2
+                    startY = team.position.y + teamSpriteHeight / 2 + teamStateGap
+                    break
+                case 'topRight':
+                    startX = team.position.x + teamSpriteWidth / 2 - stateTotalWidth
+                    startY = team.position.y - teamSpriteHeight / 2 - teamStateGap - stateHeight
+                    break
+                case 'bottomRight':
+                    startX = team.position.x + teamSpriteWidth / 2 - stateTotalWidth
+                    startY = team.position.y + teamSpriteHeight / 2 + teamStateGap
+                    break
+                default:
+                    break;
+            }
 
             self.options.services.forEach(function(service, ndx) {
-                var itemPositionX;
-                switch (quadrant) {
-                    case 'topLeft':
-                    case 'bottomLeft':
-                        itemPositionX = team.position.x - teamSpriteWidth / 2 - marginX - itemWidth;
-                        break;
-                    case 'topRight':
-                    case 'bottomRight':
-                    default:
-                        itemPositionX = team.position.x + teamSpriteWidth / 2 + marginX;
-                        break;
-                }
-                var itemPositionY = team.position.y - teamSpriteHeight / 2 - labelYGap + ndx * (itemHeight + gapHeight);
-                self.teamServiceElements.push({
+                var itemPositionX = startX + ndx * stateItemWidth + ndx * stateItemGap;
+                var pushItemPositionY = startY
+                self.teamServicePushStateElements.push({
                     teamId: team.id,
                     serviceId: service.id,
-                    sprite: new Phaser.Rectangle(itemPositionX, itemPositionY, itemWidth, itemHeight),
+                    sprite: new Phaser.Rectangle(itemPositionX, pushItemPositionY, stateItemWidth, stateItemHeight),
                     color: getDownColor(service.id)
-                })
+                });
+                var pullItemPositionY = startY + stateItemHeight + stateStateGap
+                self.teamServicePullStateElements.push({
+                    teamId: team.id,
+                    serviceId: service.id,
+                    sprite: new Phaser.Rectangle(itemPositionX, pullItemPositionY, stateItemWidth, stateItemHeight),
+                    color: getDownColor(service.id)
+                });
             });
         }
 
@@ -275,25 +320,25 @@ var app = {
             filter.update(game.input.activePointer);
         }
 
-        function onAttack (attackerId, victimId, serviceId) {
-            var sourceObj = self.options.teams.find(function (team) {
-                return team.id === attackerId;
+        function onAttack (actorId, targetId, targetServiceId) {
+            var actorTeam = self.options.teams.find(function (team) {
+                return team.id === actorId;
             });
 
-            var targetObj = self.options.teams.find(function(team) {
-                return team.id === victimId;
+            var targetTeam = self.options.teams.find(function(team) {
+                return team.id === targetId;
             });
 
             var sourcePos = {
-                x: sourceObj.position.x - fireballSpriteWidth / 2,
-                y: sourceObj.position.y - fireballSpriteHeight / 2
+                x: actorTeam.position.x - fireballSpriteWidth / 2,
+                y: actorTeam.position.y - fireballSpriteHeight / 2
             };
             var targetPos = {
-                x: targetObj.position.x - fireballSpriteWidth / 2,
-                y: targetObj.position.y - fireballSpriteHeight / 2
+                x: targetTeam.position.x - fireballSpriteWidth / 2,
+                y: targetTeam.position.y - fireballSpriteHeight / 2
             };
 
-            var spriteName = getServiceSpriteName(serviceId);
+            var spriteName = getServiceSpriteName(targetServiceId);
             var fireAct = {
                 sprite: game.add.sprite(sourcePos.x, sourcePos.y, spriteName),
                 targetPosition: {
@@ -308,26 +353,28 @@ var app = {
             self.fireActionsCache.push(fireAct);
         }
 
-        function onServiceStateChange(teamId, serviceId, serviceState){
-            for (var i = 0; i < self.teamServiceElements.length; ++i) {
-                if (self.teamServiceElements[i].teamId === teamId && self.teamServiceElements[i].serviceId === serviceId) {
-                    self.teamServiceElements[i].color = (serviceState === 1) ? getUpColor(serviceId) : getDownColor(serviceId)
+        function onTeamServicePushStateChange(teamId, serviceId, serviceState){
+            for (var i = 0; i < self.teamServicePushStateElements.length; ++i) {
+                if (self.teamServicePushStateElements[i].teamId === teamId && self.teamServicePushStateElements[i].serviceId === serviceId) {
+                    self.teamServicePushStateElements[i].color = (serviceState === 1) ? getUpColor(serviceId) : getDownColor(serviceId)
+                }
+            }
+        }
+
+        function onTeamServicePullStateChange(teamId, serviceId, serviceState){
+            for (var i = 0; i < self.teamServicePullStateElements.length; ++i) {
+                if (self.teamServicePullStateElements[i].teamId === teamId && self.teamServicePullStateElements[i].serviceId === serviceId) {
+                    self.teamServicePullStateElements[i].color = (serviceState === 1) ? getUpColor(serviceId) : getDownColor(serviceId)
                 }
             }
         }
 
         function createText(x, y, textStr) {
+            var text
             var text = game.add.text(x, y, textStr);
-            // text.anchor.set(0.5);
-            // text.align = 'center';
-
-            //  Font style
             text.font = 'Arial Black';
             text.fontSize = fontSize;
-            // text.fontWeight = 'bold';
             text.fill = '#ffffff';
-            //text.setShadow(2, 2, 'rgba(0, 0, 0, 0.7)', 2);
-
             return text;
         }
 
@@ -335,8 +382,11 @@ var app = {
             for (var i = 0; i < app.legendElements.length; ++i) {
                 game.debug.geom(app.legendElements[i].sprite, app.legendElements[i].color);
             }
-            for (var i = 0; i < app.teamServiceElements.length; ++i) {
-                game.debug.geom(app.teamServiceElements[i].sprite, app.teamServiceElements[i].color);
+            for (var i = 0; i < app.teamServicePushStateElements.length; ++i) {
+                game.debug.geom(app.teamServicePushStateElements[i].sprite, app.teamServicePushStateElements[i].color);
+            }
+            for (var i = 0; i < app.teamServicePullStateElements.length; ++i) {
+                game.debug.geom(app.teamServicePullStateElements[i].sprite, app.teamServicePullStateElements[i].color);
             }
         }
     }
