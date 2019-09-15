@@ -87,6 +87,12 @@ function getQuadrant (teamNumber, numberOfTeams) {
     }
 }
 
+function getRandomInt (min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 var app = {
     fireActionsCache: [],
     legendElements: [],
@@ -339,6 +345,19 @@ var app = {
             };
 
             var spriteName = getServiceSpriteName(targetServiceId);
+
+            var strikeLenX = targetPos.x - sourcePos.x
+            var strikeLenY = targetPos.y - sourcePos.y
+            var strikeLen = Math.sqrt(strikeLenX * strikeLenX + strikeLenY * strikeLenY)
+
+            var velocity = getRandomInt(6, 10);
+
+            var angleSin = strikeLenY / strikeLen;
+            var angleCos = strikeLenX / strikeLen;
+
+            var shiftX = angleCos * velocity;
+            var shiftY = angleSin * velocity;
+
             var fireAct = {
                 sprite: game.add.sprite(sourcePos.x, sourcePos.y, spriteName),
                 targetPosition: {
@@ -346,8 +365,8 @@ var app = {
                     y: targetPos.y
                 },
                 posVariable: {
-                    x: (targetPos.x - sourcePos.x) / 120,
-                    y: (targetPos.y - sourcePos.y) / 120
+                    x: shiftX,
+                    y: shiftY
                 }
             };
             self.fireActionsCache.push(fireAct);
