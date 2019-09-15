@@ -14,7 +14,8 @@ var stateItemHeight = 10;
 
 var stateHeight = stateItemHeight * 2 + stateStateGap;
 
-var fontSize = 14;
+var fontSize = 15;
+var fontName = 'Courier';
 
 var xGapStart = teamSpriteWidth / 2 + 5;
 var xGapEnd = teamSpriteWidth / 2 + 5;
@@ -24,7 +25,12 @@ var yGapEnd = teamSpriteWidth / 2 + teamStateGap + stateHeight + stateLabelGap +
 var fireballSpriteWidth = 128;
 var fireballSpriteHeight = 128;
 
+var unratedVersion = (new URL(window.location.href)).searchParams.get('unrated') === 'yes'
+
 function getServiceSpriteName(serviceId) {
+    if (unratedVersion) {
+        return 'unrated'
+    }
     switch (serviceId) {
         case 1: return 'red';
         case 2: return 'yellow';
@@ -95,6 +101,7 @@ function getRandomInt (min, max) {
 
 var app = {
     fireActionsCache: [],
+    explosionComplete: [],
     legendElements: [],
     teamServicePushStateElements: [],
     teamServicePullStateElements: [],
@@ -108,6 +115,9 @@ var app = {
         var game = new Phaser.Game(self.options.width, self.options.height, Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update, render: render });
 
         function preload() {
+            if (unratedVersion) {
+                game.load.spritesheet('unrated', 'assets/particles/unrated.png', fireballSpriteWidth, fireballSpriteHeight);
+            }
             game.load.spritesheet('bubble', 'assets/particles/bubble.png', teamSpriteWidth, teamSpriteHeight);
             game.load.spritesheet('red', 'assets/particles/red.png', fireballSpriteWidth, fireballSpriteHeight);
             game.load.spritesheet('yellow', 'assets/particles/yellow.png', fireballSpriteWidth, fireballSpriteHeight);
@@ -116,6 +126,7 @@ var app = {
             game.load.spritesheet('white', 'assets/particles/white.png', fireballSpriteWidth, fireballSpriteHeight);
             game.load.spritesheet('cyan', 'assets/particles/cyan.png', fireballSpriteWidth, fireballSpriteHeight);
             game.load.spritesheet('purple', 'assets/particles/purple.png', fireballSpriteWidth, fireballSpriteHeight);
+            game.load.spritesheet('explosion', 'assets/sprites/explosion.png', 64, 64, 24);
         }
 
         var sprite;
@@ -157,7 +168,10 @@ var app = {
 
                 initServices(team, quadrant);
 
-                var text = createText(0, 0, team.name);
+                var text = game.add.text(0, 0, team.name);
+                text.font = fontName;
+                text.fontSize = fontSize;
+                text.fill = '#ffffff';
 
                 var teamLabelX = team.position.x;
                 var teamLabelY = team.position.y;
@@ -182,8 +196,8 @@ var app = {
                         break;
                 }
 
-                text.x = teamLabelX;
-                text.y = teamLabelY;
+                text.x = Math.round(teamLabelX);
+                text.y = Math.round(teamLabelY);
             });
 
             initLegend();
@@ -253,9 +267,9 @@ var app = {
                     sprite: sprite2,
                     color: getDownColor(service.id)
                 })
-                var text = game.add.text(itemPositionX + gapWidth * 2 + itemWidth * 2, itemPositionY, service.name);
-                text.font = 'Arial Black';
-                text.fontSize = 14;
+                var text = game.add.text(Math.round(itemPositionX + gapWidth * 2 + itemWidth * 2), Math.round(itemPositionY), service.name);
+                text.font = fontName;
+                text.fontSize = fontSize;
                 text.fill = '#ffffff';
             });
         }
@@ -320,8 +334,21 @@ var app = {
                 if (Math.abs(x - actCacheItem.targetPosition.x) < 10 && Math.abs(y - actCacheItem.targetPosition.y) < 10) {
                     actCacheItem.sprite.destroy();
                     self.fireActionsCache.splice(key, 1);
+
+                    var explosion = game.add.sprite(x + teamSpriteWidth / 2, y + teamSpriteHeight / 2, 'explosion');
+                    var explosionAnimation = explosion.animations.add('go off');
+                    explosionAnimation.killOnComplete = true;
+                    explosionAnimation.onComplete.add(function () {
+                        self.explosionComplete.push(this);
+                    }, explosion)
+                    explosion.animations.play('go off', 30, false);
                 }
             });
+
+            self.explosionComplete.forEach(function (sprite, key) {
+                sprite.destroy();
+                self.explosionComplete.splice(key, 1);
+            })
 
             filter.update(game.input.activePointer);
         }
@@ -386,15 +413,6 @@ var app = {
                     self.teamServicePullStateElements[i].color = (serviceState === 1) ? getUpColor(serviceId) : getDownColor(serviceId)
                 }
             }
-        }
-
-        function createText(x, y, textStr) {
-            var text
-            var text = game.add.text(x, y, textStr);
-            text.font = 'Arial Black';
-            text.fontSize = fontSize;
-            text.fill = '#ffffff';
-            return text;
         }
 
         function render() {
