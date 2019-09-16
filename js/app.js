@@ -328,6 +328,10 @@ var app = {
 
                 pos.setTo(pos.x + actCacheItem.posVariable.x, pos.y + actCacheItem.posVariable.y);
 
+                if (unratedVersion) {
+                    actCacheItem.sprite.angle += 5;
+                }
+
                 var x = parseInt(pos.x, 10);
                 var y = parseInt(pos.y, 10);
 
@@ -335,7 +339,8 @@ var app = {
                     actCacheItem.sprite.destroy();
                     self.fireActionsCache.splice(key, 1);
 
-                    var explosion = game.add.sprite(x + teamSpriteWidth / 2, y + teamSpriteHeight / 2, 'explosion');
+                    var explosion = game.add.sprite(x, y, 'explosion');
+                    explosion.anchor.setTo(0.5, 0.5);
                     var explosionAnimation = explosion.animations.add('go off');
                     explosionAnimation.killOnComplete = true;
                     explosionAnimation.onComplete.add(function () {
@@ -363,12 +368,12 @@ var app = {
             });
 
             var sourcePos = {
-                x: actorTeam.position.x - fireballSpriteWidth / 2,
-                y: actorTeam.position.y - fireballSpriteHeight / 2
+                x: actorTeam.position.x,
+                y: actorTeam.position.y
             };
             var targetPos = {
-                x: targetTeam.position.x - fireballSpriteWidth / 2,
-                y: targetTeam.position.y - fireballSpriteHeight / 2
+                x: targetTeam.position.x,
+                y: targetTeam.position.y
             };
 
             var spriteName = getServiceSpriteName(targetServiceId);
@@ -396,6 +401,7 @@ var app = {
                     y: shiftY
                 }
             };
+            fireAct.sprite.anchor.setTo(0.5, 0.5);
             self.fireActionsCache.push(fireAct);
         }
 
