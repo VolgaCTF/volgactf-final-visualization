@@ -1,30 +1,3 @@
-var screenWidth = document.documentElement.clientWidth;
-var screenHeight = document.documentElement.clientHeight;
-
-var teamSpriteWidth = 64;
-var teamSpriteHeight = 64;
-
-var teamStateGap = 5;
-var stateStateGap = 2;
-var stateLabelGap = 5;
-
-var stateItemGap = 2;
-var stateItemWidth = 10;
-var stateItemHeight = 10;
-
-var stateHeight = stateItemHeight * 2 + stateStateGap;
-
-var fontSize = 15;
-var fontName = 'Courier';
-
-var xGapStart = teamSpriteWidth / 2 + 5;
-var xGapEnd = teamSpriteWidth / 2 + 5;
-var yGapStart = teamSpriteWidth / 2 + teamStateGap + stateHeight + stateLabelGap + fontSize + 10;
-var yGapEnd = teamSpriteWidth / 2 + teamStateGap + stateHeight + stateLabelGap + fontSize + 10;
-
-var fireballSpriteWidth = 128;
-var fireballSpriteHeight = 128;
-
 var unratedVersion = (new URL(window.location.href)).searchParams.get('unrated') === 'yes'
 
 function getServiceSpriteName(serviceId) {
@@ -56,40 +29,67 @@ function getUpColor(serviceId) {
 
 function getDownColor(serviceId) {
     switch (serviceId) {
-        case 1: return '#400';
-        case 2: return '#440';
-        case 3: return '#004';
-        case 4: return '#040';
-        case 5: return '#404';
-        case 6: return '#044';
-        default: return '#444';
+        case 1: return '#600';
+        case 2: return '#660';
+        case 3: return '#006';
+        case 4: return '#060';
+        case 5: return '#606';
+        case 6: return '#066';
+        default: return '#666';
     }
 }
 
-function calculatePosition (teamNumber, numberOfTeams) {
+function calculatePosition (self, teamNumber, numberOfTeams) {
     var t = 2 * Math.PI * teamNumber / numberOfTeams;
-    var a = (screenWidth - xGapStart - xGapEnd) / 2;
-    var b = (screenHeight - yGapStart - yGapEnd) / 2;
+    var a = (self.options.width - self.xGapLeft - self.xGapRight) / 2;
+    var b = (self.options.height - self.yGapTop - self.yGapBottom) / 2;
     var x = a * Math.cos(t);
     var y = b * Math.sin(t);
     return {
-        x: x + xGapStart + a,
-        y: y + yGapStart + b
+        x: x + self.xGapLeft + a,
+        y: y + self.yGapTop + b
     };
 }
 
-function getQuadrant (teamNumber, numberOfTeams) {
+function calculateCaptionPosition(self, teamNumber, numberOfTeams) {
+    var t = 2 * Math.PI * teamNumber / numberOfTeams;
+    var a = (self.options.width - self.xGapLeft2 - self.xGapRight2) / 2;
+    var b = (self.options.height - self.yGapTop2 - self.yGapBottom2) / 2;
+    var x = a * Math.cos(t);
+    var y = b * Math.sin(t);
+    return {
+        x: x + self.xGapLeft2 + a,
+        y: y + self.yGapTop2 + b
+    };
+}
+
+function calculateCaptionAngle(teamNumber, numberOfTeams) {
     var angle = 2 * Math.PI * teamNumber / numberOfTeams;
     if (angle >= 0.0 && angle < (Math.PI / 2)) {
-        return 'bottomRight';
+        return angle * 45 - 90;
     } else if (angle >= Math.PI / 2 && angle < Math.PI) {
-        return 'bottomLeft';
+        return (angle - Math.PI / 2) * 45;
     } else if (angle >= Math.PI && angle < (3 * Math.PI / 2)) {
-        return 'topLeft';
+        return (angle - Math.PI) * 45 - 90;
     } else if (angle >= (3 * Math.PI / 2) && angle < (2 * Math.PI)) {
-        return 'topRight';
+        return (angle - 3 * Math.PI / 2) * 45;
     } else {
-        return 'unknown';
+        return 0;
+    }
+}
+
+function calculateArcAngle(teamNumber, numberOfTeams) {
+    var angle = 2 * Math.PI * teamNumber / numberOfTeams;
+    if (angle >= 0.0 && angle < (Math.PI / 2)) {
+        return angle * 45 - 90;
+    } else if (angle >= Math.PI / 2 && angle < Math.PI) {
+        return (angle - Math.PI / 2) * 45;
+    } else if (angle >= Math.PI && angle < (3 * Math.PI / 2)) {
+        return (angle - Math.PI) * 45 - 270;
+    } else if (angle >= (3 * Math.PI / 2) && angle < (2 * Math.PI)) {
+        return (angle - 3 * Math.PI / 2) * 45 - 180;
+    } else {
+        return 0;
     }
 }
 
@@ -103,12 +103,22 @@ var app = {
     fireActionsCache: [],
     explosionComplete: [],
     legendElements: [],
-    teamServicePushStateElements: [],
-    teamServicePullStateElements: [],
     options: {
-        width: screenWidth,
-        height: screenHeight
+        width: document.documentElement.clientWidth,
+        height: document.documentElement.clientHeight
     },
+    fontSize: 15,
+    fontName: 'Courier',
+    teamSpriteSize: 64,
+    fireballSpriteSize: 128,
+    textHeight: null,
+    xGapLeft: null,
+    xGapRight: null,
+    yGapTop: null,
+    yGapBottom: null,
+    serviceStateArcGap: 2,
+    serviceStateArcThickness: 3,
+    captionShift: null,
 
     init: function() {
         var self = app;
@@ -116,16 +126,16 @@ var app = {
 
         function preload() {
             if (unratedVersion) {
-                game.load.spritesheet('unrated', 'assets/particles/unrated.png', fireballSpriteWidth, fireballSpriteHeight);
+                game.load.spritesheet('unrated', 'assets/particles/unrated.png', self.fireballSpriteSize, self.fireballSpriteSize);
             }
-            game.load.spritesheet('bubble', 'assets/particles/bubble.png', teamSpriteWidth, teamSpriteHeight);
-            game.load.spritesheet('red', 'assets/particles/red.png', fireballSpriteWidth, fireballSpriteHeight);
-            game.load.spritesheet('yellow', 'assets/particles/yellow.png', fireballSpriteWidth, fireballSpriteHeight);
-            game.load.spritesheet('blue', 'assets/particles/blue.png', fireballSpriteWidth, fireballSpriteHeight);
-            game.load.spritesheet('green', 'assets/particles/green.png', fireballSpriteWidth, fireballSpriteHeight);
-            game.load.spritesheet('white', 'assets/particles/white.png', fireballSpriteWidth, fireballSpriteHeight);
-            game.load.spritesheet('cyan', 'assets/particles/cyan.png', fireballSpriteWidth, fireballSpriteHeight);
-            game.load.spritesheet('purple', 'assets/particles/purple.png', fireballSpriteWidth, fireballSpriteHeight);
+            game.load.spritesheet('bubble', 'assets/particles/bubble.png', self.teamSpriteSize, self.teamSpriteSize);
+            game.load.spritesheet('red', 'assets/particles/red.png', self.fireballSpriteSize, self.fireballSpriteSize);
+            game.load.spritesheet('yellow', 'assets/particles/yellow.png', self.fireballSpriteSize, self.fireballSpriteSize);
+            game.load.spritesheet('blue', 'assets/particles/blue.png', self.fireballSpriteSize, self.fireballSpriteSize);
+            game.load.spritesheet('green', 'assets/particles/green.png', self.fireballSpriteSize, self.fireballSpriteSize);
+            game.load.spritesheet('white', 'assets/particles/white.png', self.fireballSpriteSize, self.fireballSpriteSize);
+            game.load.spritesheet('cyan', 'assets/particles/cyan.png', self.fireballSpriteSize, self.fireballSpriteSize);
+            game.load.spritesheet('purple', 'assets/particles/purple.png', self.fireballSpriteSize, self.fireballSpriteSize);
             game.load.spritesheet('explosion', 'assets/sprites/explosion.png', 64, 64, 24);
         }
 
@@ -161,43 +171,37 @@ var app = {
 
             sprite.filters = [ filter ];
 
+            var probeText = game.add.text(0, 0, 'ABCDEFyqpgj|^_');
+            probeText.font = self.fontName;
+            probeText.fontSize = self.fontSize;
+            self.textHeight = probeText.height;
+            self.xGapLeft = self.teamSpriteSize / 2 + self.textHeight + self.serviceStateArcGap * 3 + self.serviceStateArcThickness * 2 + 0;
+            self.xGapRight = self.teamSpriteSize / 2 + self.textHeight + self.serviceStateArcGap * 3 + self.serviceStateArcThickness * 2 + 0;
+            self.yGapTop = self.teamSpriteSize / 2 + self.textHeight + self.serviceStateArcGap * 3 + self.serviceStateArcThickness * 2 + 0;
+            self.yGapBottom = self.teamSpriteSize / 2 + self.textHeight + self.serviceStateArcGap * 3 + self.serviceStateArcThickness * 2 + 30;
+
+            self.xGapLeft2 = self.textHeight / 2 + 0;
+            self.xGapRight2 = self.textHeight / 2 + 0;
+            self.yGapTop2 = self.textHeight / 2 + 0;
+            self.yGapBottom2 = self.textHeight / 2 + 30;
+
             self.options.teams.forEach(function(team, ndx, arr) {
-                team.position = calculatePosition(ndx, arr.length);
-                var quadrant = getQuadrant(ndx, arr.length);
-                var player = game.add.sprite(team.position.x - teamSpriteWidth / 2, team.position.y - teamSpriteHeight / 2, 'bubble');
+                team.position = calculatePosition(self, ndx, arr.length);
+                var teamBase = game.add.sprite(team.position.x, team.position.y, 'bubble');
+                teamBase.anchor.setTo(0.5, 0.5);
 
-                initServices(team, quadrant);
+                initServices(ndx);
 
-                var text = game.add.text(0, 0, team.name);
-                text.font = fontName;
-                text.fontSize = fontSize;
-                text.fill = '#ffffff';
+                var caption = game.add.text(0, 0, team.name);
+                caption.font = self.fontName;
+                caption.fontSize = self.fontSize;
+                caption.fill = '#ffffff';
+                caption.anchor.setTo(0.5, 0.5);
+                caption.angle = calculateCaptionAngle(ndx, arr.length);
 
-                var teamLabelX = team.position.x;
-                var teamLabelY = team.position.y;
-                switch (quadrant) {
-                    case 'bottomLeft':
-                        teamLabelX = team.position.x - teamSpriteWidth / 2;
-                        teamLabelY = team.position.y + teamSpriteHeight / 2 + teamStateGap + stateHeight + stateLabelGap;
-                        break;
-                    case 'bottomRight':
-                        teamLabelX = team.position.x + teamSpriteWidth / 2 - text.width;
-                        teamLabelY = team.position.y + teamSpriteHeight / 2 + teamStateGap + stateHeight + stateLabelGap;
-                        break;
-                    case 'topLeft':
-                        teamLabelX = team.position.x - teamSpriteWidth / 2;
-                        teamLabelY = team.position.y - teamSpriteHeight / 2 - teamStateGap - stateHeight - stateLabelGap - text.height;
-                        break;
-                    case 'topRight':
-                        teamLabelX = team.position.x + teamSpriteWidth / 2 - text.width;
-                        teamLabelY = team.position.y - teamSpriteHeight / 2 - teamStateGap - stateHeight - stateLabelGap - text.height;
-                        break;
-                    default:
-                        break;
-                }
-
-                text.x = Math.round(teamLabelX);
-                text.y = Math.round(teamLabelY);
+                var captionPosition = calculateCaptionPosition(self, ndx, arr.length);
+                caption.x = captionPosition.x;
+                caption.y = captionPosition.y;
             });
 
             initLegend();
@@ -252,8 +256,8 @@ var app = {
             var gapWidth = 10;
             var itemHeight = 20;
             var itemWidth = itemHeight;
-            var itemPositionX = screenWidth / 2 - 75;
-            var itemPositionYStart = screenHeight / 2 - 75;
+            var itemPositionX = self.options.width / 2 - 75;
+            var itemPositionYStart = self.options.height / 2 - 75;
 
             self.options.services.forEach(function(service, ndx) {
                 var itemPositionY = itemPositionYStart + ndx * (itemHeight + gapHeight);
@@ -268,57 +272,38 @@ var app = {
                     color: getDownColor(service.id)
                 })
                 var text = game.add.text(Math.round(itemPositionX + gapWidth * 2 + itemWidth * 2), Math.round(itemPositionY), service.name);
-                text.font = fontName;
-                text.fontSize = fontSize;
+                text.font = self.fontName;
+                text.fontSize = self.fontSize;
                 text.fill = '#ffffff';
             });
         }
 
-        function initServices(team, quadrant) {
-            var totalServices = self.options.services.length
+        function renderTeamPushServiceState(game, team, service, angle, serviceNdx, state) {
+            var segmentGrad = 360 / self.options.services.length;
+            var arcStart = game.math.degToRad(serviceNdx * segmentGrad + angle + 2);
+            var arcEnd = game.math.degToRad((serviceNdx + 1) * segmentGrad + angle - 2);
+            var graphics = game.add.graphics(team.position.x, team.position.y);
+            var c = Phaser.Color.hexToColor(state == 1 ? getUpColor(service.id) : getDownColor(service.id));
+            graphics.lineStyle(self.serviceStateArcThickness, Phaser.Color.packPixel(c.b, c.g, c.r, c.a));
+            graphics.arc(0, 0, self.teamSpriteSize / 2 + self.serviceStateArcThickness * 2 + self.serviceStateArcGap * 2, arcStart, arcEnd, false);
+        }
 
-            var stateTotalWidth = totalServices * stateItemWidth + (totalServices - 1) * stateItemGap
+        function renderTeamPullServiceState(game, team, service, angle, serviceNdx, state) {
+            var segmentGrad = 360 / self.options.services.length;
+            var arcStart = game.math.degToRad(serviceNdx * segmentGrad + angle + 2);
+            var arcEnd = game.math.degToRad((serviceNdx + 1) * segmentGrad + angle - 2);
+            var graphics = game.add.graphics(team.position.x, team.position.y);
+            var c = Phaser.Color.hexToColor(state == 1 ? getUpColor(service.id) : getDownColor(service.id));
+            graphics.lineStyle(self.serviceStateArcThickness, Phaser.Color.packPixel(c.b, c.g, c.r, c.a));
+            graphics.arc(0, 0, self.teamSpriteSize / 2 + self.serviceStateArcThickness + self.serviceStateArcGap, arcStart, arcEnd, false);
+        }
 
-            var startX = team.position.x
-            var startY = team.position.y
-
-            switch (quadrant) {
-                case 'topLeft':
-                    startX = team.position.x - teamSpriteWidth / 2
-                    startY = team.position.y - teamSpriteHeight / 2 - teamStateGap - stateHeight
-                    break
-                case 'bottomLeft':
-                    startX = team.position.x - teamSpriteWidth / 2
-                    startY = team.position.y + teamSpriteHeight / 2 + teamStateGap
-                    break
-                case 'topRight':
-                    startX = team.position.x + teamSpriteWidth / 2 - stateTotalWidth
-                    startY = team.position.y - teamSpriteHeight / 2 - teamStateGap - stateHeight
-                    break
-                case 'bottomRight':
-                    startX = team.position.x + teamSpriteWidth / 2 - stateTotalWidth
-                    startY = team.position.y + teamSpriteHeight / 2 + teamStateGap
-                    break
-                default:
-                    break;
-            }
-
-            self.options.services.forEach(function(service, ndx) {
-                var itemPositionX = startX + ndx * stateItemWidth + ndx * stateItemGap;
-                var pushItemPositionY = startY
-                self.teamServicePushStateElements.push({
-                    teamId: team.id,
-                    serviceId: service.id,
-                    sprite: new Phaser.Rectangle(itemPositionX, pushItemPositionY, stateItemWidth, stateItemHeight),
-                    color: getDownColor(service.id)
-                });
-                var pullItemPositionY = startY + stateItemHeight + stateStateGap
-                self.teamServicePullStateElements.push({
-                    teamId: team.id,
-                    serviceId: service.id,
-                    sprite: new Phaser.Rectangle(itemPositionX, pullItemPositionY, stateItemWidth, stateItemHeight),
-                    color: getDownColor(service.id)
-                });
+        function initServices(teamNdx) {
+            var team = self.options.teams[teamNdx];
+            var angle = calculateArcAngle(teamNdx, self.options.teams.length);
+            self.options.services.forEach(function(service, serviceNdx) {
+                renderTeamPushServiceState(game, team, service, angle, serviceNdx, 0);
+                renderTeamPullServiceState(game, team, service, angle, serviceNdx, 0);
             });
         }
 
@@ -406,30 +391,42 @@ var app = {
         }
 
         function onTeamServicePushStateChange(teamId, serviceId, serviceState){
-            for (var i = 0; i < self.teamServicePushStateElements.length; ++i) {
-                if (self.teamServicePushStateElements[i].teamId === teamId && self.teamServicePushStateElements[i].serviceId === serviceId) {
-                    self.teamServicePushStateElements[i].color = (serviceState === 1) ? getUpColor(serviceId) : getDownColor(serviceId)
-                }
-            }
+            var teamNdx = self.options.teams.findIndex(function (team) {
+                return team.id === teamId;
+            });
+            var serviceNdx = self.options.services.findIndex(function (service) {
+                return service.id === serviceId;
+            })
+            renderTeamPushServiceState(
+                game,
+                self.options.teams[teamNdx],
+                self.options.services[serviceNdx],
+                calculateArcAngle(teamNdx, self.options.teams.length),
+                serviceNdx,
+                serviceState
+            );
         }
 
         function onTeamServicePullStateChange(teamId, serviceId, serviceState){
-            for (var i = 0; i < self.teamServicePullStateElements.length; ++i) {
-                if (self.teamServicePullStateElements[i].teamId === teamId && self.teamServicePullStateElements[i].serviceId === serviceId) {
-                    self.teamServicePullStateElements[i].color = (serviceState === 1) ? getUpColor(serviceId) : getDownColor(serviceId)
-                }
-            }
+            var teamNdx = self.options.teams.findIndex(function (team) {
+                return team.id === teamId;
+            });
+            var serviceNdx = self.options.services.findIndex(function (service) {
+                return service.id === serviceId;
+            })
+            renderTeamPullServiceState(
+                game,
+                self.options.teams[teamNdx],
+                self.options.services[serviceNdx],
+                calculateArcAngle(teamNdx, self.options.teams.length),
+                serviceNdx,
+                serviceState
+            );
         }
 
         function render() {
             for (var i = 0; i < app.legendElements.length; ++i) {
                 game.debug.geom(app.legendElements[i].sprite, app.legendElements[i].color);
-            }
-            for (var i = 0; i < app.teamServicePushStateElements.length; ++i) {
-                game.debug.geom(app.teamServicePushStateElements[i].sprite, app.teamServicePushStateElements[i].color);
-            }
-            for (var i = 0; i < app.teamServicePullStateElements.length; ++i) {
-                game.debug.geom(app.teamServicePullStateElements[i].sprite, app.teamServicePullStateElements[i].color);
             }
         }
     }
