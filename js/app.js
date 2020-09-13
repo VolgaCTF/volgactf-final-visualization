@@ -239,13 +239,19 @@ var app = {
             });
 
             var eventSource = new window.EventSource('/stream/');
+            eventSource.addEventListener('team/service/push-state', function (e) {
+                var data = JSON.parse(e.data);
+                onTeamServicePushStateChange(data.team_id, data.service_id, data.state);
+            })
+
+            eventSource.addEventListener('team/service/pull-state', function (e) {
+                var data = JSON.parse(e.data);
+                onTeamServicePullStateChange(data.team_id, data.service_id, data.state);
+            })
+
             eventSource.addEventListener('log', function (e) {
                 var data = JSON.parse(e.data);
-                if (data.type === 31) {
-                    onTeamServicePushStateChange(data.params.team_id, data.params.service_id, data.params.state);
-                } else if (data.type === 32) {
-                    onTeamServicePullStateChange(data.params.team_id, data.params.service_id, data.params.state);
-                } else if (data.type === 4) {
+                if (data.type === 4) {
                     onAttack(data.params.actor_team_id, data.params.target_team_id, data.params.target_service_id);
                 }
             })
