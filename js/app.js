@@ -323,6 +323,46 @@ var app = {
                 text.fontSize = self.fontSize;
                 text.fill = '#ffffff';
             });
+
+            var arcStart = game.math.degToRad(150);
+            var arcEnd = game.math.degToRad(210);
+            var graphics = game.add.graphics(self.options.width / 2 - 75, self.options.height / 2 - 25);
+            var c = Phaser.Color.hexToColor('#fff');
+            graphics.lineStyle(self.serviceStateArcThickness, Phaser.Color.packPixel(c.b, c.g, c.r, c.a));
+            graphics.arc(0, 0, 150, arcStart, arcEnd, false);
+            var pullText = game.add.text(self.options.width / 2 - 210, self.options.height / 2 - 25, 'PULL');
+            pullText.font = self.fontName;
+            pullText.fontSize = self.fontSize;
+            pullText.fill = '#ffffff';
+            pullText.anchor.setTo(0.5, 0.5);
+            pullText.angle = 270;
+            graphics.arc(0, 0, 155, arcStart, arcEnd, false);
+            var pushText = game.add.text(self.options.width / 2 - 240, self.options.height / 2 - 25, 'PUSH');
+            pushText.font = self.fontName;
+            pushText.fontSize = self.fontSize;
+            pushText.fill = '#ffffff';
+            pushText.anchor.setTo(0.5, 0.5);
+            pushText.angle = 270;
+
+            var arcStart2 = game.math.degToRad(330);
+            var arcEnd2 = game.math.degToRad(30);
+            var graphics2 = game.add.graphics(self.options.width / 2 + 75, self.options.height / 2 - 25);
+            var c2 = Phaser.Color.hexToColor('#fff');
+            graphics2.lineStyle(self.serviceStateArcThickness, Phaser.Color.packPixel(c2.b, c2.g, c2.r, c2.a));
+            graphics2.arc(0, 0, 150, arcStart2, arcEnd2, false);
+            var pullText2 = game.add.text(self.options.width / 2 + 210, self.options.height / 2 - 25, 'PULL');
+            pullText2.font = self.fontName;
+            pullText2.fontSize = self.fontSize;
+            pullText2.fill = '#ffffff';
+            pullText2.anchor.setTo(0.5, 0.5);
+            pullText2.angle = 90;
+            graphics2.arc(0, 0, 155, arcStart2, arcEnd2, false);
+            var pushText2 = game.add.text(self.options.width / 2 + 240, self.options.height / 2 - 25, 'PUSH');
+            pushText2.font = self.fontName;
+            pushText2.fontSize = self.fontSize;
+            pushText2.fill = '#ffffff';
+            pushText2.anchor.setTo(0.5, 0.5);
+            pushText2.angle = 90;
         }
 
         function renderTeamPushServiceState(game, team, service, angle, serviceNdx, state) {
