@@ -103,6 +103,7 @@ var app = {
     fireActionsCache: [],
     explosionComplete: [],
     legendElements: [],
+    teamPositionElements: {},
     options: {
         width: document.documentElement.clientWidth,
         height: document.documentElement.clientHeight
@@ -202,6 +203,21 @@ var app = {
                 var captionPosition = calculateCaptionPosition(self, ndx, arr.length);
                 caption.x = captionPosition.x;
                 caption.y = captionPosition.y;
+
+                if (!self.options.scoreboard.muted) {
+                    var teamRank = self.options.scoreboard.positions.findIndex(function (position) {
+                        return position.team_id === team.id;
+                    });
+
+                    var rank = game.add.text(0, 0, teamRank + 1);
+                    rank.font = self.fontName;
+                    rank.fontSize = self.fontSize;
+                    rank.fill = '#ffffff';
+                    rank.anchor.setTo(0.5, 0.5);
+                    rank.x = team.position.x;
+                    rank.y = team.position.y;
+                    self.teamPositionElements[team.id] = rank;
+                }
             });
 
             initLegend();
@@ -248,6 +264,31 @@ var app = {
                 var data = JSON.parse(e.data);
                 onTeamServicePullStateChange(data.team_id, data.service_id, data.state);
             })
+
+            eventSource.addEventListener('scoreboard', function (e) {
+                self.options.scoreboard = JSON.parse(e.data);
+                self.options.teams.forEach(function(team) {
+                    var rank = self.teamPositionElements[team.id]
+                    if (rank) {
+                        rank.destroy();
+                    }
+
+                    if (!self.options.scoreboard.muted) {
+                        var teamRank = self.options.scoreboard.positions.findIndex(function (position) {
+                            return position.team_id === team.id;
+                        });
+
+                        rank = game.add.text(0, 0, teamRank + 1);
+                        rank.font = self.fontName;
+                        rank.fontSize = self.fontSize;
+                        rank.fill = '#ffffff';
+                        rank.anchor.setTo(0.5, 0.5);
+                        rank.x = team.position.x;
+                        rank.y = team.position.y;
+                        self.teamPositionElements[team.id] = rank;
+                    }
+                });
+            });
 
             eventSource.addEventListener('log', function (e) {
                 var data = JSON.parse(e.data);
@@ -475,9 +516,22 @@ window.onload = function() {
                 };
             });
 
-            app.options.services = servicesOptions;
-            app.options.teams = teamsOptions;
-            app.init();
+            fetch('/api/scoreboard')
+            .then(function(response) {
+                if (response.status >= 200 && response.status < 300) {
+                    return response.json();
+                } else {
+                    var err = new Error(response.statusText);
+                    err.response = response;
+                    throw err;
+                }
+            })
+            .then(function(scoreboardData) {
+                app.options.services = servicesOptions;
+                app.options.teams = teamsOptions;
+                app.options.scoreboard = scoreboardData;
+                app.init();
+            })
         });
     });
 }
